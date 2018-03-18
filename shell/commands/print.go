@@ -1,10 +1,8 @@
 package commands
 
 import (
-
 	".."
 	ishell "gopkg.in/abiosoft/ishell.v2"
-
 )
 
 func init() {
@@ -19,10 +17,9 @@ func init() {
 }
 
 func print(root *shell.HugShell, c *ishell.Context) {
-	if !root.AssertChainExist(c) {
+	if !root.AssertGenesisBlockExists(c) {
 		return
 	}
-
 
 	var chain = root.Blockchain()
 	var proof = chain.ProofAlgorithm()
@@ -49,7 +46,6 @@ func print(root *shell.HugShell, c *ishell.Context) {
 			}
 		}
 	}
-
 
 }
 

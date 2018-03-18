@@ -1,15 +1,17 @@
 package storage
 
 import (
+	"errors"
+
 	"../../common/serialization"
 	"../../core"
 	"github.com/boltdb/bolt"
-	"errors"
 )
 
 var bucket_blocks = []byte("blocks")
 
 var key_last = []byte("l")
+var key_genesis = []byte("g")
 
 type BoltBlockStore struct {
 	db *bolt.DB
@@ -40,19 +42,20 @@ func NewBoltBlockStore(filePath string) (*BoltBlockStore, error) {
 	return result, nil
 }
 
-func (self *BoltBlockStore) Close(){
+func (self *BoltBlockStore) Close() {
 	self.db.Close()
 	self.db = nil
 }
 
 func (self *BoltBlockStore) Add(block *core.Block) error {
-	if self.db == nil{
+	if self.db == nil {
 		return errors.New("db connection was closed")
 	}
 	var encodedBlock, err = serialization.SimpleEncode(block)
 	if err != nil {
 		return err
 	}
+
 	err = self.db.Update(func(tx *bolt.Tx) error {
 		var blocks = tx.Bucket(bucket_blocks)
 		err = blocks.Put(block.Hash, encodedBlock.Bytes())
@@ -61,6 +64,12 @@ func (self *BoltBlockStore) Add(block *core.Block) error {
 		}
 
 		err = blocks.Put(key_last, block.Hash)
+		if err != nil {
+			return err
+		}
+		if block.IsGenesisBlock() {
+			err = blocks.Put(key_genesis, block.Hash)
+		}
 
 		return err
 	})
@@ -68,8 +77,41 @@ func (self *BoltBlockStore) Add(block *core.Block) error {
 	return err
 }
 
+func (self *BoltBlockStore) GenesisBlock() (*core.Block, error) {
+	if self.db == nil {
+		return nil, errors.New("db connection was closed")
+	}
+
+	var result *core.Block = nil
+	var err = self.db.View(func(tx *bolt.Tx) error {
+		var blocks = tx.Bucket(bucket_blocks)
+
+		var hash = blocks.Get(key_genesis)
+		if hash == nil {
+			return nil
+		}
+
+		var genBin = blocks.Get(hash)
+		if genBin == nil {
+			return nil
+		}
+
+		var genesisBlock = new(core.Block)
+		var err = serialization.SimpleDecode(genBin, &genesisBlock)
+		result = genesisBlock
+
+		return err
+	})
+
+	if err != nil {
+		result = nil
+	}
+
+	return result, err
+}
+
 func (self *BoltBlockStore) Tip() (*core.Block, error) {
-	if self.db == nil{
+	if self.db == nil {
 		return nil, errors.New("db connection was closed")
 	}
 
@@ -102,7 +144,7 @@ func (self *BoltBlockStore) Tip() (*core.Block, error) {
 }
 
 func (self *BoltBlockStore) Cursor() (*core.BlockCursor, error) {
-	if self.db == nil{
+	if self.db == nil {
 		return nil, errors.New("db connection was closed")
 	}
 
@@ -110,7 +152,7 @@ func (self *BoltBlockStore) Cursor() (*core.BlockCursor, error) {
 	if err != nil {
 		return nil, err
 	}
-	if tip == nil{
+	if tip == nil {
 		return nil, errors.New("genesis block not found")
 	}
 
@@ -123,7 +165,7 @@ func (self *BoltBlockStore) Cursor() (*core.BlockCursor, error) {
 }
 
 func (self *BoltBlockCursor) Current() *core.Block {
-	if self.store.db == nil{
+	if self.store.db == nil {
 		return nil
 	}
 
@@ -131,7 +173,7 @@ func (self *BoltBlockCursor) Current() *core.Block {
 }
 
 func (self *BoltBlockCursor) Reset() error {
-	if self.store.db == nil{
+	if self.store.db == nil {
 		return errors.New("db connection was closed")
 	}
 
@@ -145,7 +187,7 @@ func (self *BoltBlockCursor) Reset() error {
 }
 
 func (self *BoltBlockCursor) Next() (bool, error) {
-	if self.store.db == nil{
+	if self.store.db == nil {
 		return false, errors.New("db connection was closed")
 	}
 

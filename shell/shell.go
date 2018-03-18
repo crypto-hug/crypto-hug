@@ -4,12 +4,11 @@ import (
 	"errors"
 	"os"
 
-
+	"../common/prompt"
 	"../core"
 	"../core/storage"
-	ishell "gopkg.in/abiosoft/ishell.v2"
 	color "github.com/fatih/color"
-	"../common/prompt"
+	ishell "gopkg.in/abiosoft/ishell.v2"
 )
 
 var shell = new(HugShell)
@@ -19,34 +18,33 @@ func init() {
 	shell.Console = s
 	shell.Console.SetPrompt("ℍ ")
 
-
 	prompt.SetupDelegatePrinter(
-		func(msg string){ // debzg
+		func(msg string) { // debzg
 			color.Set(color.FgHiBlack, color.Italic)
 			defer color.Unset()
 			shell.Console.Printf("🔘: %s\n", msg)
 		},
-		func(msg string){ // info
+		func(msg string) { // info
 			color.Set(color.FgWhite)
 			defer color.Unset()
 			shell.Console.Printf("ℹ️️: %s\n", msg)
 		},
-		func(msg string){ // say
+		func(msg string) { // say
 			color.Set(color.FgGreen, color.Bold)
 			defer color.Unset()
 			shell.Console.Printf("💬: %s\n", msg)
 		},
-		func(msg string){ // success
+		func(msg string) { // success
 			color.Set(color.FgGreen, color.Bold)
 			defer color.Unset()
 			shell.Console.Printf("✅: %s\n", msg)
 		},
-		func(msg string){ // warning
+		func(msg string) { // warning
 			color.Set(color.FgYellow, color.Bold)
 			defer color.Unset()
 			shell.Console.Printf("⚠️: %s\n", msg)
 		},
-		func(msg string){ // panic
+		func(msg string) { // panic
 			color.Set(color.FgRed, color.Bold)
 			defer color.Unset()
 			shell.Console.Printf("🚨️: %s\n", msg)
@@ -63,31 +61,34 @@ func Get() *HugShell {
 	return shell
 }
 
-func (self *HugShell) AssertChainExist(cmdCtx *ishell.Context) bool {
-	if self.blockchain != nil {
-		return true
+func (self *HugShell) AssertGenesisBlockExists(c *ishell.Context) bool {
+	var hasGenBlock, err = self.Blockchain().HasGenesisBlock()
+	if err != nil {
+		PanicExit(err)
+		return false
 	}
 
-	prompt.Shared().Warn("no blockchain loaded!")
-	prompt.Shared().Warn("use 'new' to create one")
-	return false
+	if !hasGenBlock {
+		prompt.Shared().Warn("no genesis block found. command ignored")
+		return false
+	}
+
+	return hasGenBlock
 }
 
 func (self *HugShell) Blockchain() *core.Blockchain {
 	if self.blockchain == nil {
-		PanicExit(errors.New("blockchain not created or loaded"))
-		return nil
+		self.createBlockchain()
 	}
 
 	return self.blockchain
 }
 
-func (self *HugShell) CreateBlockchain(rewardAddress string) {
+func (self *HugShell) createBlockchain() {
 	if self.blockchain != nil {
 		PanicExit(errors.New("blockchain already created or loaded"))
 		return
 	}
-
 
 	var filePath = "crypto-hug.db"
 	prompt.Shared().Debug("use blockchain file: %s", filePath)
@@ -97,14 +98,7 @@ func (self *HugShell) CreateBlockchain(rewardAddress string) {
 		return
 	}
 
-	chain, err := core.NewBlockchain(sink, rewardAddress)
-	if err != nil {
-		sink.Close()
-		os.Remove(filePath)
-		PanicExit(err)
-		return
-	}
-
+	chain := core.NewBlockchain(sink)
 	self.blockchain = chain
 }
 

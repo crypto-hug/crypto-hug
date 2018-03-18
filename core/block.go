@@ -3,22 +3,21 @@ package core
 import (
 	"fmt"
 	"time"
-	"../common/formatters"
+
 	"../common/crypt"
+	"../common/formatters"
 )
 
 // unexported
 
 type Block struct {
-	Version   		uint16
-	Timestamp 		int64
-	Hash      		[]byte
-	PrevHash  		[]byte
-	Transactions  	Transactions
-	Nonce 	  		int
+	Version      uint16
+	Timestamp    int64
+	Hash         []byte
+	PrevHash     []byte
+	Transactions Transactions
+	Nonce        int
 }
-
-
 
 func (self *Block) PrettyPrint(algo ProofAlgorithm) string {
 	const tmpl = `
@@ -64,7 +63,11 @@ func NewGenesisBlock(coinbase *Transaction) *Block {
 	return self
 }
 
-func (self *Block) getTransactionsHash(){
+func (self *Block) IsGenesisBlock() bool {
+	return len(self.PrevHash) <= 0
+}
+
+func (self *Block) getTransactionsHash() {
 
 }
 

@@ -13,12 +13,15 @@ func init() {
 		Name: "add",
 		Help: "add a new block to the blockchain",
 		Func: func(c *ishell.Context) {
-			if !root.AssertChainExist(c) {
+			if !root.AssertGenesisBlockExists(c) {
 				return
 			}
 
 			var data = strings.Join(c.Args, " ")
-			root.Blockchain().AddNewBlock(data)
+			var err = root.Blockchain().AddNewBlock(data)
+			if err != nil {
+				shell.PanicExit(err)
+			}
 
 		},
 	})
