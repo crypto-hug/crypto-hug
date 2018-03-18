@@ -3,6 +3,7 @@ package commands
 import (
 	".."
 	ishell "gopkg.in/abiosoft/ishell.v2"
+	"strings"
 )
 
 func init() {
@@ -11,7 +12,8 @@ func init() {
 		Name: "new",
 		Help: "creates a new blockchain",
 		Func: func(c *ishell.Context) {
-			root.CreateBlockchain()
+			var address = strings.Join(c.Args, " ")
+			root.CreateBlockchain(address)
 		},
 	})
 

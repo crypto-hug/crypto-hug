@@ -3,49 +3,45 @@ package core
 import (
 	"fmt"
 	"time"
-
-	"../common/crypt"
 	"../common/formatters"
+	"../common/crypt"
 )
 
 // unexported
 
 type Block struct {
-	Version   uint16
-	Timestamp int64
-	Hash      []byte
-	PrevHash  []byte
-	Data      []byte
+	Version   		uint16
+	Timestamp 		int64
+	Hash      		[]byte
+	PrevHash  		[]byte
+	Transactions  	Transactions
+	Nonce 	  		int
 }
 
-func (self *Block) calcHash() []byte {
 
-	var hash = crypt.AllBytesHash(
-		[]byte(formatters.HexString(int64(self.Version))),
-		self.PrevHash,
-		[]byte(formatters.HexString(self.Timestamp)),
-		self.Data)
 
-	return hash
-}
-
-func (self *Block) PrettyPrint() string {
+func (self *Block) PrettyPrint(algo ProofAlgorithm) string {
 	const tmpl = `
-Version:	%d
-Hash:		%x
-Prev. Hash:	%x
-Timestamp:	%d
-Data:		%s
+Version:        %d
+Hash:           %x
+Prev. Hash:     %x
+Nonce:          %v
+Timestamp:      %d
+Valid:          %v
+Transactions:   %v
 `
 	var result = fmt.Sprintf(tmpl,
 		self.Version, self.Hash, self.PrevHash,
-		self.Timestamp, self.Data)
+		self.Nonce,
+		self.Timestamp,
+		algo.Validate(self),
+		len(self.Transactions))
 
 	return result
 }
 
 // exported
-const CURRENT_VERSION uint16 = 1
+const CurrentVersion uint16 = 1
 
 // type Block interface {
 // 	GetVersion() uint16
@@ -53,17 +49,33 @@ const CURRENT_VERSION uint16 = 1
 // 	GetHash() []byte
 // }
 
-func NewBlock(data string, prevHash []byte) *Block {
+func NewBlock(transactions []*Transaction, prevHash []byte) *Block {
 	var self = new(Block)
-	self.Version = CURRENT_VERSION
+	self.Version = CurrentVersion
 	self.Timestamp = time.Now().Unix()
-	self.Data = []byte(data)
+	self.Transactions = transactions
 	self.PrevHash = prevHash
-	self.Hash = self.calcHash()
 
 	return self
 }
-func NewGenesisBlock() *Block {
-	var self = NewBlock("Genesis Block", []byte{})
+func NewGenesisBlock(coinbase *Transaction) *Block {
+	var self = NewBlock([]*Transaction{coinbase}, []byte{})
+	self.Hash = []byte{}
 	return self
+}
+
+func (self *Block) getTransactionsHash(){
+
+}
+
+func (self *Block) GetHash(proofTargetBits int) []byte {
+	var result = crypt.AllBytesHash(
+		self.PrevHash,
+		self.Transactions.getHash(),
+		[]byte(formatters.HexString(self.Timestamp)),
+		[]byte(formatters.HexString(int64(proofTargetBits))),
+		[]byte(formatters.HexString(int64(self.Nonce))),
+	)
+
+	return result
 }

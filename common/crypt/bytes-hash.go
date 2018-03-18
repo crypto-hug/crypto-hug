@@ -10,6 +10,7 @@ func BytesHash(data []byte) []byte {
 	return result[:]
 }
 
+
 func AllBytesHash(allData ...[]byte) []byte {
 	var data = bytes.Join(allData, []byte{})
 	var result = BytesHash(data)

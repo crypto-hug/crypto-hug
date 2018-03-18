@@ -1,10 +1,10 @@
 package commands
 
 import (
-	"fmt"
 
 	".."
 	ishell "gopkg.in/abiosoft/ishell.v2"
+
 )
 
 func init() {
@@ -23,22 +23,34 @@ func print(root *shell.HugShell, c *ishell.Context) {
 		return
 	}
 
-	var cursor, err = root.Blockchain().Cursor()
+
+	var chain = root.Blockchain()
+	var proof = chain.ProofAlgorithm()
+	var cursor, err = chain.Cursor()
 	var hasNext = true
+
 	for hasNext {
 		if err != nil {
 			shell.PanicExit(err)
 			return
 		}
 		var block = (*cursor).Current()
-		fmt.Printf(block.PrettyPrint())
-		fmt.Println()
+		root.Console.Printf(block.PrettyPrint(proof))
+		root.Console.Println()
 		hasNext, err = (*cursor).Next()
 
-		root.Console.Printf("[more]")
-		root.Console.ReadLine()
+		if hasNext {
 
+			root.Console.Printf("more [ENTER] | exit [e]: ")
+			var s = root.Console.ReadLine()
+			if s == "e" || s == "E" {
+				root.Console.Printf("\n\n")
+				break
+			}
+		}
 	}
+
+
 }
 
 // var blocks = self.blockchain.GetBlocks()
