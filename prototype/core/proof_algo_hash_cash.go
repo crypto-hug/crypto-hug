@@ -41,7 +41,6 @@ func (self *HashCash) Proof(block *Block) error{
 	var nonce = 0
 	var max = math.MaxInt64
 	for nonce < max{
-
 		prompt.Shared().Debug("Mining block with nonce %v", nonce)
 		block.Nonce = nonce
 		hash = block.GetHash(PROOF_TARGET_BITS)
