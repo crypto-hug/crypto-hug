@@ -1,23 +1,26 @@
 package utils
 
 import (
+	"../../log"
 	"fmt"
 	"github.com/pkg/errors"
-	"os"
-
-	"../../prompt"
 )
 
-func PanicExit(err error) {
-	prompt.Shared().Panic(err.Error())
-	prompt.Shared().Debug("error details: %+v", err)
+func FatalExit(err error) {
+	errStr := fmt.Sprintf("%+v", err)
+
+	log.Global().Debug(`error details:
+`+errStr, nil)
+	log.Global().Fatal(err.Error()+`
+
+exit app
+`, nil)
 	//log.Fatal(err)
 	//panic(err)
-	os.Exit(1)
 }
 
 func AssertExists(obj interface{}, name string) {
 	if obj == nil {
-		PanicExit(errors.New(fmt.Sprintf("%v not created", name)))
+		FatalExit(errors.New(fmt.Sprintf("%v not created", name)))
 	}
 }

@@ -1,26 +1,34 @@
 package utils
 
 import (
-	"os"
-	"../../prompt"
+	"../../log"
 	ishell "gopkg.in/abiosoft/ishell.v2"
+	"os"
 )
 
-type App struct{
-	Shell *ishell.Shell
+type App struct {
+	Shell              *ishell.Shell
+	printer            *Printer
 	InteractiveWelcome string
+	log                *log.Logger
 }
 
-func NewApp(name string) *App{
+func NewApp(name string) *App {
 	var shell = ishell.New()
-	var result = App{Shell: shell}
+	var printer = Printer{shell: shell}
+	var logger = log.NewLog("App")
+	var result = App{Shell: shell, log: logger, printer: &printer}
 
 	return &result
 }
 
-func (self *App) Run(){
+func (self *App) Printer() *Printer {
+	return self.printer
+}
+
+func (self *App) Run() {
 	if len(os.Args) >= 2 && os.Args[1] == "-i" {
-		prompt.Shared().Say(self.InteractiveWelcome)
+		self.log.Info(self.InteractiveWelcome, nil)
 		self.Shell.Run()
 	} else if len(os.Args) >= 2 {
 		var e = self.Shell.Process(os.Args[1:]...)
@@ -30,6 +38,6 @@ func (self *App) Run(){
 		}
 	} else {
 		self.Shell.Process("help")
-	}	
-	
+	}
+
 }

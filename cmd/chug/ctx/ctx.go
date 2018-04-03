@@ -2,13 +2,11 @@ package ctx
 
 import (
 	"../../../core"
-	"../../../persistance"
 	"../../utils"
 )
 
 type CHugContext struct {
 	app        *utils.App
-	db         *hugdb.BoltDb
 	blockchain *core.Blockchain
 }
 
@@ -19,12 +17,14 @@ func setup() {
 	app.InteractiveWelcome = "welcome to the crypto hug interactive shell"
 	app.Shell.SetPrompt("ℍ ")
 
-	utils.SetupPrompt(app.Shell)
+	//utils.SetupPrompt(app.Shell)
 
-	db := utils.SetupDb()
-	blockchain := utils.SetupBlockchain(db)
+	blockchain, err := utils.SetupBlockchain()
+	if err != nil {
+		utils.FatalExit(err)
+	}
 
-	root = &CHugContext{app: app, db: db, blockchain: blockchain}
+	root = &CHugContext{app: app, blockchain: blockchain}
 }
 
 func Root() *CHugContext {
@@ -39,10 +39,7 @@ func (self *CHugContext) App() *utils.App {
 	utils.AssertExists(self.app, "app")
 	return self.app
 }
-func (self *CHugContext) DB() *hugdb.BoltDb {
-	utils.AssertExists(self.db, "db")
-	return self.db
-}
+
 func (self *CHugContext) Blockchain() *core.Blockchain {
 	utils.AssertExists(self.blockchain, "blockchain")
 	return self.blockchain

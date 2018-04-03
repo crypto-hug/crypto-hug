@@ -2,28 +2,29 @@ package commands
 
 import (
 	"../../../core"
-	"../../../prompt"
 	"../../utils"
+	"../ctx"
 	ishell "gopkg.in/abiosoft/ishell.v2"
 )
 
 func NewWalletCmd() *ishell.Cmd {
+	var root = ctx.Root()
 	result := &ishell.Cmd{
 		Name: "wallet",
 		Help: "create a priv/pub key pair",
 		Func: func(c *ishell.Context) {
-			prompt.Shared().Info("generating key pair ...")
+			root.App().Printer().Info("generating key pair ...")
 
 			var wallet, err = core.NewWallet()
 			if err != nil {
-				utils.PanicExit(err)
+				utils.FatalExit(err)
 				return
 			}
 
-			prompt.Shared().Success("keys generated:")
-			prompt.Shared().Say("prv key	%v", wallet.PrivAsString())
-			prompt.Shared().Say("pub key	%v", wallet.PubAsString())
-			prompt.Shared().Say("address	%v", wallet.Address.Address)
+			root.App().Printer().Success("keys generated:")
+			root.App().Printer().Say("prv key	%v", wallet.PrivAsString())
+			root.App().Printer().Say("pub key	%v", wallet.PubAsString())
+			root.App().Printer().Say("address	%v", wallet.Address.Address)
 
 		},
 	}

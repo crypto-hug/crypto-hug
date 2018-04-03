@@ -1,13 +1,10 @@
 package main
 
 import (
-	"./ctx"
 	_ "./commands"
+	"./ctx"
 )
 
-
 func main() {
-	
 	ctx.Root().App().Run()
-
 }

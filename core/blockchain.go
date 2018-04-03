@@ -2,17 +2,20 @@ package core
 
 import (
 	"../formatters"
-	"../prompt"
+	"../log"
 	"github.com/pkg/errors"
 )
 
 type Blockchain struct {
-	sink         BlockStore
+	sink         *BlockStore
 	validatorReg TxValidatorsRegistry
+	log          *log.Logger
 }
 
-func NewBlockchain(sink BlockStore, validators TxValidatorsRegistry) *Blockchain {
-	result := Blockchain{sink: sink, validatorReg: validators}
+func NewBlockchain(sink *BlockStore, validators TxValidatorsRegistry) *Blockchain {
+	var logger = log.NewLog("blockchain")
+
+	result := Blockchain{sink: sink, validatorReg: validators, log: logger}
 	return &result
 }
 
@@ -65,7 +68,7 @@ func (self *Blockchain) addTransactionToChain(tx *Transaction) error {
 
 func (self *Blockchain) createGenesisBlock() (*Block, error) {
 	myAddr := "VB6QzPAL7P83N48MhoFdLXuroxPmUiphp"
-	prompt.Shared().Info("create genesis block with reward to %s", myAddr)
+	self.log.Info("create genesis block", log.More{"reward": myAddr})
 	genesisOwnerAddress, err := NewAddressFromString(myAddr)
 	if err != nil {
 		return nil, err
@@ -86,11 +89,11 @@ func (self *Blockchain) createGenesisBlock() (*Block, error) {
 	err = self.sink.Add(result)
 
 	if err != nil {
-		prompt.Shared().Warn("genesis block creation failed")
+		self.log.Warn("genesis block creation failed", nil)
 		return nil, errors.Wrap(err, "createGenesisBlock")
 	}
 
-	prompt.Shared().Success("genesis block created (%s)", formatters.HexStringFromRaw(result.Hash))
+	self.log.Info("genesis block created", log.More{"hash": formatters.HexStringFromRaw(result.Hash)})
 
 	return result, err
 }

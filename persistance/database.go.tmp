@@ -4,6 +4,7 @@ import (
 	"../serialization"
 	"fmt"
 	"github.com/boltdb/bolt"
+	"github.com/pkg/errors"
 )
 
 var bucket_blocks = []byte("blocks")
@@ -20,7 +21,7 @@ type BoltDb struct {
 func NewBoltDB(filePath string) (*BoltDb, error) {
 	var db, err = bolt.Open(filePath, 0600, nil)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
 	var result = BoltDb{db: db}
