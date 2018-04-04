@@ -2,6 +2,7 @@ package utils
 
 import (
 	"../../core"
+	"../../core/chug"
 	"../../core/txvalidators"
 	"../../log"
 	"../../persistance/blocks"
@@ -14,6 +15,7 @@ func SetupBlockchain() (*core.Blockchain, error) {
 
 	log.Global().Debug("create blockchain", log.More{"blocks": blocksPath, "blockstats": statsPath})
 
+	cfg := core.NewBlockchainConfig(createGenesisTransactions)
 	sink := blocks.NewFsBlockSink(blocksPath)
 	stat, err := blocks.NewBoltBlockStats(statsPath)
 	if err != nil {
@@ -24,22 +26,28 @@ func SetupBlockchain() (*core.Blockchain, error) {
 
 	txvReg := txvalidators.SharedRegistry()
 
-	result := core.NewBlockchain(store, txvReg)
+	result := core.NewBlockchain(cfg, store, txvReg)
 
 	return result, nil
 }
 
-// func SetupDb() *hugdb.BoltDb {
-// 	var filePath = "./blockhain_data/c_hug.db"
-// 	log.Global().Debug("use blockchain file", log.More{"file": filePath})
+func createGenesisTransactions() (core.Transactions, error) {
+	myAddr := "VB6QzPAL7P83N48MhoFdLXuroxPmUiphp"
+	log.Global().Info("create genesis block", log.More{"reward": myAddr})
+	genesisOwnerAddress, err := core.NewAddressFromString(myAddr)
+	if err != nil {
+		return nil, err
+	}
+	spawnHugs := core.Transactions{}
 
-// 	var db, err = hugdb.NewBoltDB(filePath)
-// 	if err != nil {
-// 		FatalExit(err)
-// 		return nil
-// 	}
+	for i := 0; i < 3; i++ {
+		var spawnTx *core.Transaction = nil
+		spawnTx, err = chug.NewSpawnHugTransaction(genesisOwnerAddress)
+		if err != nil {
+			return nil, err
+		}
+		spawnHugs = append(spawnHugs, spawnTx)
+	}
 
-// 	db.Bootstrap()
-
-// 	return db
-// }
+	return spawnHugs, err
+}

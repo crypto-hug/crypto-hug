@@ -3,17 +3,11 @@ package core
 import (
 	"../crypt"
 	"../formatters"
-	"../serialization"
 	"fmt"
 	"time"
 )
 
 type TransactionType string
-
-const (
-	SpawnHugTxType  TransactionType = "SPAWNHUG"
-	DonateHugTxType TransactionType = "DONATEHUG"
-)
 
 type Transactions []*Transaction
 
@@ -23,11 +17,6 @@ type Transaction struct {
 	Type      TransactionType
 	Timestamp int64
 	Data      []byte
-}
-
-type SpawnHugTxData struct {
-	RecipientAddress string
-	Asset            Asset
 }
 
 func (self Transactions) getHash() []byte {
@@ -77,20 +66,4 @@ func NewTransaction(ofType TransactionType, withData []byte) *Transaction {
 
 	result.Hash = result.CalcHash()
 	return &result
-}
-
-func NewSpawnHugTransaction(producerAdr *Address) (*Transaction, error) {
-	asset, err := NewHugAsset(producerAdr)
-	if err != nil {
-		return nil, err
-	}
-
-	var txData = SpawnHugTxData{RecipientAddress: asset.ProducerAddress, Asset: *asset}
-	txDataRaw, err := serialization.ObjToJsonRaw(txData)
-	if err != nil {
-		return nil, err
-	}
-
-	var result = NewTransaction(SpawnHugTxType, txDataRaw)
-	return result, nil
 }

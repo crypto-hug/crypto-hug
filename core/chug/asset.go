@@ -1,8 +1,9 @@
-package core
+package chug
 
 import (
-	"../serialization"
-	"./errors"
+	".."
+	"../../serialization"
+	"../errors"
 )
 
 type HugHistoryEntry struct {
@@ -14,6 +15,8 @@ type HugHistoryEntry struct {
 type HugHistory []HugHistoryEntry
 
 type HugState string
+
+const AssetTypeHug core.AssetType = "HUG"
 
 const (
 	HugStateNew   HugState = "NEW"
@@ -34,7 +37,7 @@ type Hug struct {
 	History HugHistory
 }
 
-func UnwrapHug(asset *Asset) (*Hug, error) {
+func UnwrapHug(asset *core.Asset) (*Hug, error) {
 	if asset.Type != AssetTypeHug {
 		return nil, errors.NewErrorFromString("Invalid Asset type %s. Expected %s | Asset: %s", asset.Type, AssetTypeHug, asset.Address)
 	}
@@ -47,4 +50,20 @@ func UnwrapHug(asset *Asset) (*Hug, error) {
 	err := serialization.JsonParse(asset.Data, hug)
 
 	return &hug, err
+}
+
+func NewHugAsset(producer *core.Address) (*core.Asset, error) {
+	addr, err := core.NewAddress()
+	if err != nil {
+		return nil, err
+	}
+
+	result := core.Asset{Version: core.AssetVersion,
+		Address:         addr.Address,
+		ProducerAddress: producer.Address,
+		Etag:            core.NewEtag,
+		Type:            AssetTypeHug,
+		Data:            ""}
+
+	return &result, nil
 }

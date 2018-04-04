@@ -3,20 +3,37 @@ package core
 import (
 	"../formatters"
 	"../log"
-	"github.com/pkg/errors"
+	"./errors"
 )
 
 type Blockchain struct {
 	sink         *BlockStore
+	cfg          *BlockchainConfig
 	validatorReg TxValidatorsRegistry
 	log          *log.Logger
 }
 
-func NewBlockchain(sink *BlockStore, validators TxValidatorsRegistry) *Blockchain {
+func NewBlockchain(config *BlockchainConfig, sink *BlockStore, validators TxValidatorsRegistry) *Blockchain {
 	var logger = log.NewLog("blockchain")
+	config.Assert()
 
-	result := Blockchain{sink: sink, validatorReg: validators, log: logger}
+	result := Blockchain{sink: sink, validatorReg: validators, log: logger, cfg: config}
 	return &result
+}
+
+func (self *Blockchain) createGenesisBlock(transactions Transactions) (*Block, error) {
+	result := NewGenesisBlock(transactions)
+
+	err := self.sink.Add(result)
+
+	if err != nil {
+		self.log.Warn("genesis block creation failed", nil)
+		return nil, errors.Wrap(err, "CreateGenesisBlock")
+	}
+
+	self.log.Info("genesis block created", log.More{"hash": formatters.HexStringFromRaw(result.Hash)})
+
+	return result, nil
 }
 
 func (self Blockchain) Cursor() (*BlockCursor, error) {
@@ -48,7 +65,12 @@ func (self *Blockchain) addTransactionToChain(tx *Transaction) error {
 	}
 
 	if genesis == nil {
-		genesis, err = self.createGenesisBlock()
+		genesisTx, err := self.cfg.CreateGenesisTransactions()
+		if err != nil {
+			return err
+		}
+
+		genesis, err = self.createGenesisBlock(genesisTx)
 	}
 
 	if err != nil {
@@ -64,38 +86,6 @@ func (self *Blockchain) addTransactionToChain(tx *Transaction) error {
 	err = self.sink.Add(newBlock)
 
 	return err
-}
-
-func (self *Blockchain) createGenesisBlock() (*Block, error) {
-	myAddr := "VB6QzPAL7P83N48MhoFdLXuroxPmUiphp"
-	self.log.Info("create genesis block", log.More{"reward": myAddr})
-	genesisOwnerAddress, err := NewAddressFromString(myAddr)
-	if err != nil {
-		return nil, err
-	}
-	spawnHugs := Transactions{}
-
-	for i := 0; i < 3; i++ {
-		var spawnTx *Transaction = nil
-		spawnTx, err = NewSpawnHugTransaction(genesisOwnerAddress)
-		if err != nil {
-			return nil, err
-		}
-		spawnHugs = append(spawnHugs, spawnTx)
-	}
-
-	result := NewGenesisBlock(spawnHugs)
-
-	err = self.sink.Add(result)
-
-	if err != nil {
-		self.log.Warn("genesis block creation failed", nil)
-		return nil, errors.Wrap(err, "createGenesisBlock")
-	}
-
-	self.log.Info("genesis block created", log.More{"hash": formatters.HexStringFromRaw(result.Hash)})
-
-	return result, err
 }
 
 func (self *Blockchain) validateTx(tx *Transaction) error {

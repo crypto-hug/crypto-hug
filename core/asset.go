@@ -8,8 +8,7 @@ import (
 type AssetType string
 
 const (
-	AssetTypeHug AssetType = "HUG"
-	NewEtag      int32     = 0
+	NewEtag int32 = 0
 )
 
 type Asset struct {
@@ -19,22 +18,6 @@ type Asset struct {
 	Etag            int32
 	Type            AssetType
 	Data            string
-}
-
-func NewHugAsset(producer *Address) (*Asset, error) {
-	addr, err := NewAddress()
-	if err != nil {
-		return nil, err
-	}
-
-	result := Asset{Version: AssetVersion,
-		Address:         addr.Address,
-		ProducerAddress: producer.Address,
-		Etag:            NewEtag,
-		Type:            AssetTypeHug,
-		Data:            ""}
-
-	return &result, nil
 }
 
 func (self *Asset) AddressRaw() []byte {

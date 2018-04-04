@@ -25,6 +25,12 @@ func ArgIsNil(argName string) error {
 	return NewErrorFromString("argument %v is nil", argName)
 }
 
+func AssertNotNil(name string, obj interface{}) {
+	if obj == nil {
+		panic(NewErrorFromString("%s is nil", name))
+	}
+}
+
 func MustBeNotNil(argName string, obj interface{}) error {
 	if obj == nil {
 		return ArgIsNil(argName)

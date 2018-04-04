@@ -2,6 +2,7 @@ package commands
 
 import (
 	"../../../core"
+	"../../../core/chug"
 	//"../../../log"
 	"../../utils"
 	"../ctx"
@@ -21,7 +22,7 @@ func NewTransactionCmd() *ishell.Cmd {
 				utils.FatalExit(err)
 			}
 
-			tx, err := core.NewSpawnHugTransaction(addr)
+			tx, err := chug.NewSpawnHugTransaction(addr)
 			if err != nil {
 				utils.FatalExit(err)
 			}

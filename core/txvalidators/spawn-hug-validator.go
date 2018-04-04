@@ -2,6 +2,7 @@ package txvalidators
 
 import (
 	".."
+	"../chug"
 	"../errors"
 )
 
@@ -14,7 +15,7 @@ func (self SpawnHugValidator) Validate(tx *core.Transaction) error {
 		return err
 	}
 
-	if tx.Type != core.SpawnHugTxType {
+	if tx.Type != chug.SpawnHugTxType {
 		return errors.NewErrorFromString("Unknown tx type %s", tx.Type)
 	}
 

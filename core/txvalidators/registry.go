@@ -2,6 +2,7 @@ package txvalidators
 
 import (
 	".."
+	"../chug"
 	"../errors"
 )
 
@@ -17,7 +18,7 @@ func init() {
 	common := &CommonValidator{}
 	spawnHug := &SpawnHugValidator{}
 
-	me.validators[core.SpawnHugTxType] = core.TxValidators{common, spawnHug}
+	me.validators[chug.SpawnHugTxType] = core.TxValidators{common, spawnHug}
 }
 
 func SharedRegistry() *CommonValidatorRegistry {
