@@ -1,8 +1,8 @@
 package chug
 
 import (
-	"../"
-	"../../serialization"
+	"github.com/crypto-hug/crypto-hug/core"
+	"github.com/crypto-hug/crypto-hug/serialization"
 )
 
 type SpawnHugTxData struct {
@@ -29,4 +29,18 @@ func NewSpawnHugTransaction(producerAdr *core.Address) (*core.Transaction, error
 
 	var result = core.NewTransaction(SpawnHugTxType, txDataRaw)
 	return result, nil
+}
+
+func UnwrapSpawnHugTxData(tx *core.Transaction) (*SpawnHugTxData, error) {
+	if tx.Data == nil {
+		return nil, nil
+	}
+	if len(tx.Data) <= 0 {
+		return nil, nil
+	}
+
+	result := &SpawnHugTxData{}
+	err := serialization.JsonParseRaw(tx.Data, result)
+
+	return result, err
 }

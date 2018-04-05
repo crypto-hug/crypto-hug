@@ -1,9 +1,9 @@
 package chug
 
 import (
-	".."
-	"../../serialization"
-	"../errors"
+	"github.com/crypto-hug/crypto-hug/core"
+	"github.com/crypto-hug/crypto-hug/errors"
+	"github.com/crypto-hug/crypto-hug/serialization"
 )
 
 type HugHistoryEntry struct {

@@ -3,10 +3,11 @@ package boltdb
 import (
 	// "../../serialization"
 	"fmt"
-	"github.com/boltdb/bolt"
-	"github.com/pkg/errors"
 	"os"
 	"path/filepath"
+
+	"github.com/boltdb/bolt"
+	"github.com/pkg/errors"
 )
 
 type BoltDB struct {

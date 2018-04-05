@@ -1,32 +1,36 @@
 package utils
 
 import (
-	"../../core"
-	"../../core/chug"
-	"../../core/txvalidators"
-	"../../log"
-	"../../persistance/blocks"
-	//ishell "gopkg.in/abiosoft/ishell.v2"
+	"github.com/crypto-hug/crypto-hug/core"
+	"github.com/crypto-hug/crypto-hug/core/chug"
+	"github.com/crypto-hug/crypto-hug/log"
+	"github.com/crypto-hug/crypto-hug/persistance/blocks"
+	"github.com/crypto-hug/crypto-hug/persistance/wallets"
 )
 
 func SetupBlockchain() (*core.Blockchain, error) {
+	walletsPath := "./blockhain_data/wallets"
 	blocksPath := "./blockhain_data/blocks"
 	statsPath := "./blockhain_data/_index.db"
 
 	log.Global().Debug("create blockchain", log.More{"blocks": blocksPath, "blockstats": statsPath})
 
-	cfg := core.NewBlockchainConfig(createGenesisTransactions)
-	sink := blocks.NewFsBlockSink(blocksPath)
+	blockSink := blocks.NewFsBlockSink(blocksPath)
+	walletSink := wallets.NewFsWalletSink(walletsPath)
+
+	cfg := core.NewBlockchainConfig()
+	cfg.CreateGenesisTransactions = createGenesisTransactions
+	cfg.TransactionProcessors = core.TransactionProcessors{&core.CommonTxProcessor{},
+		chug.NewSpawnHugProcessor(walletSink)}
+
 	stat, err := blocks.NewBoltBlockStats(statsPath)
 	if err != nil {
 		return nil, err
 	}
 
-	store := core.NewBlockStore(sink, stat)
+	store := core.NewBlockStore(blockSink, stat)
 
-	txvReg := txvalidators.SharedRegistry()
-
-	result := core.NewBlockchain(cfg, store, txvReg)
+	result := core.NewBlockchain(cfg, store)
 
 	return result, nil
 }

@@ -1,23 +1,24 @@
 package core
 
 import (
-	"../formatters"
-	"../log"
-	"./errors"
+	"github.com/crypto-hug/crypto-hug/errors"
+	"github.com/crypto-hug/crypto-hug/formatters"
+	"github.com/crypto-hug/crypto-hug/log"
 )
 
 type Blockchain struct {
-	sink         *BlockStore
-	cfg          *BlockchainConfig
-	validatorReg TxValidatorsRegistry
-	log          *log.Logger
+	sink       *BlockStore
+	cfg        *BlockchainConfig
+	processors TransactionProcessorRegistry
+	log        *log.Logger
 }
 
-func NewBlockchain(config *BlockchainConfig, sink *BlockStore, validators TxValidatorsRegistry) *Blockchain {
+func NewBlockchain(config *BlockchainConfig, sink *BlockStore) *Blockchain {
 	var logger = log.NewLog("blockchain")
 	config.Assert()
 
-	result := Blockchain{sink: sink, validatorReg: validators, log: logger, cfg: config}
+	processors := TransactionProcessorRegistry{processors: config.TransactionProcessors}
+	result := Blockchain{sink: sink, processors: processors, log: logger, cfg: config}
 	return &result
 }
 
@@ -48,7 +49,7 @@ func (self *Blockchain) AddTransaction(tx *Transaction) error {
 		return err
 	}
 
-	err = processTx(tx)
+	err = self.processTx(tx)
 	if err != nil {
 		return err
 	}
@@ -89,21 +90,37 @@ func (self *Blockchain) addTransactionToChain(tx *Transaction) error {
 }
 
 func (self *Blockchain) validateTx(tx *Transaction) error {
-	validators, err := self.validatorReg.Get(tx)
-	if err != nil {
-		return err
-	}
+	processors := self.processors.Get(tx)
 
-	for _, validator := range validators {
-		err = validator.Validate(tx)
+	for _, processor := range processors {
+		self.log.Debug("begin tx validation", log.More{"processor": processor.Name(), "tx": formatters.HexStringFromRaw(tx.Hash)})
+		err := processor.Validate(tx)
+
 		if err != nil {
+			self.log.Error("tx failed validation", log.More{"processor": processor.Name(), "tx": formatters.HexStringFromRaw(tx.Hash), "err": err.Error()})
 			return err
 		}
+
+		self.log.Info("tx validated", log.More{"processor": processor.Name(), "tx": formatters.HexStringFromRaw(tx.Hash)})
 	}
 
 	return nil
 }
 
-func processTx(tx *Transaction) error {
+func (self *Blockchain) processTx(tx *Transaction) error {
+	processors := self.processors.Get(tx)
+
+	for _, processor := range processors {
+		self.log.Debug("begin tx processing", log.More{"processor": processor.Name(), "tx": formatters.HexStringFromRaw(tx.Hash)})
+		err := processor.Process(tx)
+
+		if err != nil {
+			self.log.Error("tx failed processing", log.More{"processor": processor.Name(), "tx": formatters.HexStringFromRaw(tx.Hash), "err": err.Error()})
+			return err
+		}
+
+		self.log.Info("tx processed", log.More{"processor": processor.Name(), "tx": formatters.HexStringFromRaw(tx.Hash)})
+	}
+
 	return nil
 }

@@ -1,9 +1,9 @@
 package commands
 
 import (
-	"../../../core"
-	"../../utils"
-	"../ctx"
+	"github.com/crypto-hug/crypto-hug/cmd/chug/ctx"
+	"github.com/crypto-hug/crypto-hug/cmd/utils"
+	"github.com/crypto-hug/crypto-hug/core"
 	ishell "gopkg.in/abiosoft/ishell.v2"
 )
 

@@ -1,10 +1,11 @@
 package core
 
 import (
-	"../crypt"
-	"../formatters"
 	"fmt"
 	"time"
+
+	"github.com/crypto-hug/crypto-hug/crypt"
+	"github.com/crypto-hug/crypto-hug/formatters"
 )
 
 type Block struct {

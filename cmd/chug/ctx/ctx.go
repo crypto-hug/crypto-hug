@@ -1,8 +1,8 @@
 package ctx
 
 import (
-	"../../../core"
-	"../../utils"
+	"github.com/crypto-hug/crypto-hug/cmd/utils"
+	"github.com/crypto-hug/crypto-hug/core"
 )
 
 type CHugContext struct {

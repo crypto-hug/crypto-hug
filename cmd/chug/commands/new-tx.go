@@ -1,11 +1,10 @@
 package commands
 
 import (
-	"../../../core"
-	"../../../core/chug"
-	//"../../../log"
-	"../../utils"
-	"../ctx"
+	"github.com/crypto-hug/crypto-hug/cmd/chug/ctx"
+	"github.com/crypto-hug/crypto-hug/cmd/utils"
+	"github.com/crypto-hug/crypto-hug/core"
+	"github.com/crypto-hug/crypto-hug/core/chug"
 	ishell "gopkg.in/abiosoft/ishell.v2"
 )
 

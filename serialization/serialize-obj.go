@@ -18,8 +18,13 @@ func ObjToJsonStr(obj interface{}) (string, error) {
 
 func JsonParse(jsonStr string, obj interface{}) error {
 	raw := []byte(jsonStr)
-	err := json.Unmarshal(raw, obj)
+	err := JsonParseRaw(raw, obj)
 	return errors.Wrap(err, "JsonParse")
+}
+
+func JsonParseRaw(raw []byte, obj interface{}) error {
+	err := json.Unmarshal(raw, obj)
+	return errors.Wrap(err, "JsonParseRaw")
 }
 
 func ObjToJsonRaw(obj interface{}) ([]byte, error) {

@@ -1,9 +1,10 @@
 package core
 
 import (
-	"../crypt"
-	"../formatters"
 	"crypto/sha256"
+
+	"github.com/crypto-hug/crypto-hug/crypt"
+	"github.com/crypto-hug/crypto-hug/formatters"
 	"golang.org/x/crypto/ripemd160"
 )
 

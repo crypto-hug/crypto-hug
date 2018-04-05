@@ -1,8 +1,9 @@
 package utils
 
 import (
-	"../../log"
 	"fmt"
+
+	"github.com/crypto-hug/crypto-hug/log"
 	"github.com/pkg/errors"
 )
 

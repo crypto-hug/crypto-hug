@@ -1,7 +1,7 @@
 package commands
 
 import (
-	"../ctx"
+	"github.com/crypto-hug/crypto-hug/cmd/chug/ctx"
 	ishell "gopkg.in/abiosoft/ishell.v2"
 )
 

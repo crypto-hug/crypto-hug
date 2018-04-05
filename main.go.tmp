@@ -1,0 +1,10 @@
+package main
+
+import (
+	_ "crypto-hug/cmd/chug/commands"
+	"crypto-hug/cmd/chug/ctx"
+)
+
+func main() {
+	ctx.Root().App().Run()
+}

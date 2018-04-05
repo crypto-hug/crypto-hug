@@ -2,27 +2,18 @@ package errors
 
 import (
 	"fmt"
+
 	"github.com/pkg/errors"
 )
 
-var (
-	NoGenesisBlock = errors.New("no genesis block")
-)
-
-func TxValidationFailed(reason string, formatArgs ...interface{}) error {
-	if len(formatArgs) > 0 {
-		reason = fmt.Sprintf(reason, formatArgs)
-	}
-
-	return NewErrorFromString("TxValidation FAILED: %s ", reason)
-}
-
-func TxValidationUnknownTransactionType(t string) error {
-	return TxValidationFailed("unknown transaction type %s", t)
-}
-
 func ArgIsNil(argName string) error {
 	return NewErrorFromString("argument %v is nil", argName)
+}
+
+func AssertTrue(name string, val bool, cause string) {
+	if val == false {
+		panic(NewErrorFromString("%s %s", name, cause))
+	}
 }
 
 func AssertNotNil(name string, obj interface{}) {

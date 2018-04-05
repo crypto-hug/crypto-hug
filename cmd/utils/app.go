@@ -1,9 +1,10 @@
 package utils
 
 import (
-	"../../log"
-	ishell "gopkg.in/abiosoft/ishell.v2"
 	"os"
+
+	"github.com/crypto-hug/crypto-hug/log"
+	ishell "gopkg.in/abiosoft/ishell.v2"
 )
 
 type App struct {

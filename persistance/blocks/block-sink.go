@@ -1,15 +1,16 @@
 package blocks
 
 import (
-	"../../core"
-	"../../core/errors"
-	"../../formatters"
-	"../../serialization"
 	"io/ioutil"
 
-	"github.com/spf13/afero"
 	"os"
 	"path/filepath"
+
+	"github.com/crypto-hug/crypto-hug/core"
+	"github.com/crypto-hug/crypto-hug/errors"
+	"github.com/crypto-hug/crypto-hug/formatters"
+	"github.com/crypto-hug/crypto-hug/serialization"
+	"github.com/spf13/afero"
 )
 
 type FsBlockSink struct {

@@ -1,8 +1,8 @@
 package main
 
 import (
-	_ "./commands"
-	"./ctx"
+	_ "github.com/crypto-hug/crypto-hug/cmd/chug/commands"
+	"github.com/crypto-hug/crypto-hug/cmd/chug/ctx"
 )
 
 func main() {

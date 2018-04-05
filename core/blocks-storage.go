@@ -1,7 +1,7 @@
 package core
 
 import (
-	"../core/errors"
+	"github.com/crypto-hug/crypto-hug/errors"
 )
 
 type BlockStore struct {

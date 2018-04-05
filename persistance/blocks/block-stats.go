@@ -1,7 +1,8 @@
 package blocks
 
 import (
-	"../boltdb"
+	//	"github.com/crypto-hug/crypto-hug/persistance/boltdb"
+	"github.com/crypto-hug/crypto-hug/persistance/boltdb"
 )
 
 const (

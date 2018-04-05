@@ -24,17 +24,29 @@ type BlockStats interface {
 	GetGenesis() ([]byte, error)
 }
 
-type AssetState interface {
-	Get(addr []byte) (*Asset, error)
-	Set(asset *Asset) error
+type AssetStats interface {
+	AssetType() string
+	Count() int64
+	Set(key string, data interface{}) error
+	Get(key string, data interface{}) error
 }
 
-type TxValidator interface {
-	Validate(tx *Transaction) error
+type WalletSink interface {
+	PutMetadata(address string, key string, data string) error
+	GetMetadata(address string, key string) (string, error)
+	GetBalance(address string, asset *Asset) (int, error)
+	PutBalance(address string, asset *Asset, newBalance int) error
 }
 
-type TxValidators []TxValidator
-
-type TxValidatorsRegistry interface {
-	Get(tx *Transaction) (TxValidators, error)
+type TransactionProcessor interface {
+	ShouldProcess(tx *Transaction) bool
+	Validate(tx *Transaction) (bool error)
+	Process(tx *Transaction) error
+	Name() string
 }
+
+type TransactionProcessors []TransactionProcessor
+
+//type TxValidationIssue string
+
+//type TxValidationIssues []TxValidationIssue

@@ -1,8 +1,8 @@
 package core
 
 import (
-	"../formatters"
-	"./errors"
+	"github.com/crypto-hug/crypto-hug/errors"
+	"github.com/crypto-hug/crypto-hug/formatters"
 )
 
 type AssetType string
