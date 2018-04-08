@@ -4,66 +4,58 @@ import (
 	"fmt"
 	"time"
 
-	"../common/crypt"
-	"../common/formatters"
+	"github.com/crypto-hug/crypto-hug/crypt"
+	"github.com/crypto-hug/crypto-hug/formatters"
 )
 
-// unexported
-
 type Block struct {
-	Version   uint16
-	Timestamp int64
-	Hash      []byte
-	PrevHash  []byte
-	Data      []byte
+	Version      Version
+	Hash         []byte
+	PrevHash     []byte
+	Timestamp    int64
+	Transactions Transactions
 }
 
 func (self *Block) calcHash() []byte {
-
-	var hash = crypt.AllBytesHash(
-		[]byte(formatters.HexString(int64(self.Version))),
+	// todo: calc a merkle root hash for the transactions
+	var result = crypt.AllBytesHash(
+		[]byte(formatters.HexString(self.Timestamp)),
 		self.PrevHash,
 		[]byte(formatters.HexString(self.Timestamp)),
-		self.Data)
-
-	return hash
-}
-
-func (self *Block) PrettyPrint() string {
-	const tmpl = `
-Version:	%d
-Hash:		%x
-Prev. Hash:	%x
-Timestamp:	%d
-Data:		%s
-`
-	var result = fmt.Sprintf(tmpl,
-		self.Version, self.Hash, self.PrevHash,
-		self.Timestamp, self.Data)
+		self.Transactions.getHash(),
+	)
 
 	return result
 }
 
-// exported
-const CURRENT_VERSION uint16 = 1
-
-// type Block interface {
-// 	GetVersion() uint16
-// 	GetData() string
-// 	GetHash() []byte
-// }
-
-func NewBlock(data string, prevHash []byte) *Block {
+func NewBlock(transactions Transactions, prevHash []byte) *Block {
 	var self = new(Block)
-	self.Version = CURRENT_VERSION
+	self.Version = BlockVersion
 	self.Timestamp = time.Now().Unix()
-	self.Data = []byte(data)
+	self.Transactions = transactions
 	self.PrevHash = prevHash
 	self.Hash = self.calcHash()
 
 	return self
 }
-func NewGenesisBlock() *Block {
-	var self = NewBlock("Genesis Block", []byte{})
-	return self
+
+func NewGenesisBlock(transactions Transactions) *Block {
+	return NewBlock(transactions, []byte{})
+}
+
+func (self *Block) IsGenesisBlock() bool {
+	return len(self.PrevHash) <= 0
+}
+
+func (self *Block) PrettyPrint() string {
+	const tmpl = `
+Version:        %d
+Hash:           %x
+Prev. Hash:     %x
+Timestamp:      %d`
+	var result = fmt.Sprintf(tmpl,
+		self.Version, self.Hash, self.PrevHash,
+		self.Timestamp)
+
+	return result
 }
