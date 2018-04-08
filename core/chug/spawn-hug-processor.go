@@ -5,33 +5,50 @@ import (
 	"github.com/crypto-hug/crypto-hug/errors"
 )
 
+const max_hugs_in_wallet = 5
+
 type SpawnHugProcessor struct {
-	sink core.WalletSink
+	wallets core.WalletSink
+	assets  core.AssetSink
+
+	receipient *core.Address
+	asset      *HugAsset
 }
 
-func NewSpawnHugProcessor(sink core.WalletSink) *SpawnHugProcessor {
-	result := SpawnHugProcessor{sink: sink}
-	return &result
+func (self *SpawnHugProcessor) Setup(wallets core.WalletSink, assets core.AssetSink) {
+	errors.AssertNotNil("wallets", wallets)
+	errors.AssertNotNil("assets", assets)
+
+	self.wallets = wallets
+	self.assets = assets
 }
 
-func (self SpawnHugProcessor) Validate(tx *core.Transaction) error {
-	err := errors.MustBeNotNil("tx", tx)
-	if err != nil {
+func (self *SpawnHugProcessor) Prepare(tx *core.Transaction) error {
+	if err := errors.MustBeNotNil("tx", tx); err != nil {
 		return err
 	}
+	errors.AssertNotNil("self.wallets", self.wallets)
+	errors.AssertNotNil("self.assets", self.assets)
+	errors.AssertTrue("tx.Type", tx.Type == SpawnHugTxType, "is not SpawnHug")
 
-	if tx.Type != SpawnHugTxType {
-		return errors.NewErrorFromString("Unknown tx type %s", tx.Type)
-	}
-
-	data, err := UnwrapSpawnHugTxData(tx)
+	addr, err := core.NewAddressFromString(tx.Sender)
 	if err != nil {
-		return errors.Wrap(err, "SpawnHugProcessor:Validate")
+		return errors.Wrap(err, "invalid sender address")
 	}
 
-	if data == nil {
-		return errors.NewErrorFromString("tx content is not valid SpawnHugTxData")
+	asset := NewHugAsset(addr)
+
+	ownedAssets, err := self.wallets.ListAssetsByType(addr, AssetTypeHug)
+	if err != nil {
+		return errors.Wrap(err, "could not get owned assets")
 	}
+
+	if ownedAssets != nil && len(ownedAssets) >= max_hugs_in_wallet {
+		return errors.NewErrorFromString("max hug balance of %v reached: current %v", max_hugs_in_wallet, len(ownedAssets))
+	}
+
+	self.receipient = addr
+	self.asset = asset
 
 	return nil
 }
@@ -45,21 +62,15 @@ func (self *SpawnHugProcessor) Name() string {
 }
 
 func (self *SpawnHugProcessor) Process(tx *core.Transaction) error {
-	data, err := UnwrapSpawnHugTxData(tx)
-	if err != nil {
-		return errors.Wrap(err, "SpawnHugProcessor:Process")
+	if err := self.wallets.PutAssetPropF(self.receipient, self.asset.Header(), "balance", 1); err != nil {
+		return errors.Wrap(err, "failed to set new balance")
 	}
 
-	balance, err := self.sink.GetBalance(data.RecipientAddress, &data.Asset)
-	if err != nil {
-		return errors.Wrap(err, "SpawnHugProcessor:Process")
+	data := &core.AssetJournalData{}
+
+	if err := self.assets.PutJournal(self.asset.Header(), HugActionBirth, self.receipient, data); err != nil {
+		return errors.Wrap(err, "failed to update journal")
 	}
 
-	if balance != 0 {
-		return errors.NewErrorFromString("inavlid balance %v expected 0 for address %s", balance, data.RecipientAddress)
-	}
-
-	err = self.sink.PutBalance(data.RecipientAddress, &data.Asset, balance+1)
-
-	return errors.Wrap(err, "SpawnHugProcessor:Process")
+	return nil
 }

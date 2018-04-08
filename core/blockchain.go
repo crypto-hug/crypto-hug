@@ -9,16 +9,17 @@ import (
 type Blockchain struct {
 	sink       *BlockStore
 	cfg        *BlockchainConfig
-	processors TransactionProcessorRegistry
+	walletSink WalletSink
+	assetSink  AssetSink
 	log        *log.Logger
 }
 
-func NewBlockchain(config *BlockchainConfig, sink *BlockStore) *Blockchain {
+func NewBlockchain(config *BlockchainConfig, sink *BlockStore, walletSink WalletSink, assetSink AssetSink) *Blockchain {
 	var logger = log.NewLog("blockchain")
 	config.Assert()
 
-	processors := TransactionProcessorRegistry{processors: config.TransactionProcessors}
-	result := Blockchain{sink: sink, processors: processors, log: logger, cfg: config}
+	result := Blockchain{sink: sink, log: logger, cfg: config,
+		walletSink: walletSink, assetSink: assetSink}
 	return &result
 }
 
@@ -44,12 +45,13 @@ func (self Blockchain) Cursor() (*BlockCursor, error) {
 }
 
 func (self *Blockchain) AddTransaction(tx *Transaction) error {
-	err := self.validateTx(tx)
+	processors := self.createProcessorsFor(tx)
+	err := self.validateTx(tx, processors)
 	if err != nil {
 		return err
 	}
 
-	err = self.processTx(tx)
+	err = self.processTx(tx, processors)
 	if err != nil {
 		return err
 	}
@@ -89,14 +91,15 @@ func (self *Blockchain) addTransactionToChain(tx *Transaction) error {
 	return err
 }
 
-func (self *Blockchain) validateTx(tx *Transaction) error {
-	processors := self.processors.Get(tx)
+func (self *Blockchain) validateTx(tx *Transaction, processors *TransactionProcessors) error {
 
-	for _, processor := range processors {
+	for _, processor := range *processors {
+		processor.Setup(self.walletSink, self.assetSink)
 		self.log.Debug("begin tx validation", log.More{"processor": processor.Name(), "tx": formatters.HexStringFromRaw(tx.Hash)})
-		err := processor.Validate(tx)
 
-		if err != nil {
+		processor.Setup(self.walletSink, self.assetSink)
+
+		if err := processor.Prepare(tx); err != nil {
 			self.log.Error("tx failed validation", log.More{"processor": processor.Name(), "tx": formatters.HexStringFromRaw(tx.Hash), "err": err.Error()})
 			return err
 		}
@@ -107,10 +110,8 @@ func (self *Blockchain) validateTx(tx *Transaction) error {
 	return nil
 }
 
-func (self *Blockchain) processTx(tx *Transaction) error {
-	processors := self.processors.Get(tx)
-
-	for _, processor := range processors {
+func (self *Blockchain) processTx(tx *Transaction, processors *TransactionProcessors) error {
+	for _, processor := range *processors {
 		self.log.Debug("begin tx processing", log.More{"processor": processor.Name(), "tx": formatters.HexStringFromRaw(tx.Hash)})
 		err := processor.Process(tx)
 
@@ -123,4 +124,15 @@ func (self *Blockchain) processTx(tx *Transaction) error {
 	}
 
 	return nil
+}
+
+func (self *Blockchain) createProcessorsFor(tx *Transaction) *TransactionProcessors {
+	result := TransactionProcessors{}
+	for _, processor := range self.cfg.CreateTxProcessors() {
+		if processor.ShouldProcess(tx) {
+			result = append(result, processor)
+		}
+	}
+
+	return &result
 }

@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 
 	"github.com/crypto-hug/crypto-hug/crypt"
+	"github.com/crypto-hug/crypto-hug/errors"
 	"github.com/crypto-hug/crypto-hug/formatters"
 	"golang.org/x/crypto/ripemd160"
 )
@@ -26,6 +27,15 @@ func NewAddressFromRaw(raw []byte) *Address {
 	result := Address{Address: address, PubKeyHash: pubKeyHash}
 
 	return &result
+}
+
+func NewAddressStrict() *Address {
+	result, err := NewAddress()
+	if err != nil {
+		panic(errors.Wrap(err, "unable to create new address"))
+	}
+
+	return result
 }
 
 func NewAddress() (*Address, error) {
@@ -61,6 +71,24 @@ func NewAddressFromString(address string) (*Address, error) {
 	result := NewAddressFromRaw(raw)
 
 	return result, err
+}
+
+func NewAddressFromStringStrict(address string) *Address {
+	result, err := NewAddressFromString(address)
+	if err != nil {
+		panic(errors.Wrap(err, "Address:NewAddressFromStringStrict"))
+	}
+
+	return result
+}
+
+func (self *Address) Bytes() []byte {
+	raw, err := formatters.Base58FromString(self.Address)
+	if err != nil {
+		panic(errors.Wrap(err, "Address:Bytes"))
+	}
+
+	return raw
 }
 
 func versionedPubHashChecksum(verPubKey []byte) []byte {

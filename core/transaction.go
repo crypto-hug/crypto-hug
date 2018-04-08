@@ -13,11 +13,13 @@ type TransactionType string
 type Transactions []*Transaction
 
 type Transaction struct {
-	Version   Version
-	Hash      []byte
-	Type      TransactionType
-	Timestamp int64
-	Data      []byte
+	Version      Version
+	Hash         []byte
+	Type         TransactionType
+	Timestamp    int64
+	Sender       string
+	SenderPubKey []byte
+	Data         []byte
 }
 
 func (self Transactions) getHash() []byte {
@@ -46,12 +48,14 @@ func (self *Transaction) PrettyPrint() string {
 	const tmpl = `
 Version:        %d
 Hash:           %x
+Sender:			%v
 Timestamp:      %d
 Type:           %v
 Data:           %v`
 	var result = fmt.Sprintf(tmpl,
 		self.Version,
 		self.Hash,
+		self.Sender,
 		self.Timestamp,
 		self.Type,
 		string(self.Data))
@@ -59,11 +63,13 @@ Data:           %v`
 	return result
 }
 
-func NewTransaction(ofType TransactionType, withData []byte) *Transaction {
+func NewTransaction(ofType TransactionType, sender string, pubKey []byte, withData []byte) *Transaction {
 	var result = Transaction{Version: TxVersion,
-		Type:      ofType,
-		Data:      withData,
-		Timestamp: time.Now().Unix()}
+		Type:         ofType,
+		Sender:       sender,
+		SenderPubKey: pubKey,
+		Data:         withData,
+		Timestamp:    time.Now().Unix()}
 
 	result.Hash = result.CalcHash()
 	return &result

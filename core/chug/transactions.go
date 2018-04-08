@@ -2,45 +2,70 @@ package chug
 
 import (
 	"github.com/crypto-hug/crypto-hug/core"
+	"github.com/crypto-hug/crypto-hug/errors"
 	"github.com/crypto-hug/crypto-hug/serialization"
 )
 
-type SpawnHugTxData struct {
+type SpendHugTxData struct {
+	HugAddress       string
 	RecipientAddress string
-	Asset            core.Asset
 }
 
 const (
-	SpawnHugTxType  core.TransactionType = "SPAWNHUG"
-	DonateHugTxType core.TransactionType = "DONATEHUG"
+	SpawnHugTxType core.TransactionType = "SPAWNHUG"
+	SpendHugTxType core.TransactionType = "SPENDHUG"
 )
 
-func NewSpawnHugTransaction(producerAdr *core.Address) (*core.Transaction, error) {
-	asset, err := NewHugAsset(producerAdr)
-	if err != nil {
-		return nil, err
-	}
+var DataEmptyError error = errors.NewErrorFromString("No Data")
 
-	var txData = SpawnHugTxData{RecipientAddress: asset.ProducerAddress, Asset: *asset}
-	txDataRaw, err := serialization.ObjToJsonRaw(txData)
-	if err != nil {
-		return nil, err
-	}
-
-	var result = core.NewTransaction(SpawnHugTxType, txDataRaw)
+func NewSpawnHugTransaction(producer *core.Address, pubKey []byte) (*core.Transaction, error) {
+	var result = core.NewTransaction(SpawnHugTxType, producer.Address, pubKey, []byte{})
 	return result, nil
 }
 
-func UnwrapSpawnHugTxData(tx *core.Transaction) (*SpawnHugTxData, error) {
-	if tx.Data == nil {
-		return nil, nil
-	}
-	if len(tx.Data) <= 0 {
-		return nil, nil
+func NewSpendHugTransaction(senderAddress string, senderPubKey []byte, hugAddress string, recipientAddress string) (*core.Transaction, error) {
+	data := SpendHugTxData{HugAddress: hugAddress, RecipientAddress: recipientAddress}
+	dataRaw, err := serialization.ObjToJsonRaw(data)
+	if err != nil {
+		panic(err)
 	}
 
-	result := &SpawnHugTxData{}
-	err := serialization.JsonParseRaw(tx.Data, result)
+	tx := core.NewTransaction(SpendHugTxType, senderAddress, senderPubKey, dataRaw)
+	return tx, nil
+}
+
+func unwrap(tx *core.Transaction, content interface{}) error {
+	if tx.Data == nil {
+		return DataEmptyError
+	}
+	if len(tx.Data) <= 0 {
+		return DataEmptyError
+	}
+
+	err := serialization.JsonParseRaw(tx.Data, content)
+	return err
+}
+
+func UnwrapSpendHugTxData(tx *core.Transaction) (*SpendHugTxData, error) {
+	result := &SpendHugTxData{}
+	err := unwrap(tx, result)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not parse pend hug data")
+	}
+	if result.RecipientAddress == "" {
+		return nil, errors.NewErrorFromString("no recipient address defined")
+	}
+	if result.HugAddress == "" {
+		return nil, errors.NewErrorFromString("no hug address defined")
+	}
+
+	if _, err := core.NewAddressFromString(result.RecipientAddress); err != nil {
+		return nil, errors.Wrap(err, "could not parse receipient address string")
+	}
+
+	if _, err = core.NewAddressFromString(result.HugAddress); err != nil {
+		return nil, errors.Wrap(err, "could not parse hug address string")
+	}
 
 	return result, err
 }

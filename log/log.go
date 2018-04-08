@@ -76,7 +76,7 @@ func Global() *Logger {
 }
 
 func NewLog(sys string) *Logger {
-	result := new(logrus.Fields{"sys": sys})
+	result := new(logrus.Fields{"_sys": sys})
 
 	return result
 }

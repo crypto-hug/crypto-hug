@@ -7,7 +7,9 @@ import (
 )
 
 var (
-	NoGenesisBlock = errors.NewErrorFromString("no genesis block")
+	NoGenesisBlock    = errors.NewErrorFromString("no genesis block")
+	InsufficientFunds = errors.NewErrorFromString("insufficient funds")
+	AssetNotExist     = errors.NewErrorFromString("asset not exist")
 )
 
 func TxValidationFailed(reason string, formatArgs ...interface{}) error {

@@ -9,9 +9,12 @@ import (
 type CommonTxProcessor struct {
 }
 
-func (self *CommonTxProcessor) Validate(tx *Transaction) error {
-	err := errors.MustBeNotNil("tx", tx)
-	if err != nil {
+func (self CommonTxProcessor) Setup(wallets WalletSink, assets AssetSink) {
+}
+
+func (self CommonTxProcessor) Prepare(tx *Transaction) error {
+
+	if err := errors.MustBeNotNil("tx", tx); err != nil {
 		return err
 	}
 
@@ -19,9 +22,6 @@ func (self *CommonTxProcessor) Validate(tx *Transaction) error {
 		return TxValidationFailed("Tx hash missmatch")
 	}
 
-	if len(tx.Data) == 0 {
-		return TxValidationFailed("tx data is empty")
-	}
 	return nil
 }
 

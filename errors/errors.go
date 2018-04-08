@@ -6,6 +6,8 @@ import (
 	"github.com/pkg/errors"
 )
 
+var PropertyNotExists = errors.New("property not exists")
+
 func ArgIsNil(argName string) error {
 	return NewErrorFromString("argument %v is nil", argName)
 }

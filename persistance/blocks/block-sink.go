@@ -1,8 +1,6 @@
 package blocks
 
 import (
-	"io/ioutil"
-
 	"os"
 	"path/filepath"
 
@@ -79,7 +77,7 @@ func (self *FsBlockSink) Get(hash []byte) (*core.Block, error) {
 	}
 	defer handle.Close()
 
-	bin, err := ioutil.ReadAll(handle)
+	bin, err := afero.ReadAll(handle)
 	if err != nil {
 		return nil, errors.Wrap(err, "FsBlockSink:Get:ReadFile")
 	}

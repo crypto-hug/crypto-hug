@@ -13,6 +13,7 @@ func NewWalletCmd() *ishell.Cmd {
 		Name: "wallet",
 		Help: "create a priv/pub key pair",
 		Func: func(c *ishell.Context) {
+
 			root.App().Printer().Info("generating key pair ...")
 
 			var wallet, err = core.NewWallet()
@@ -20,12 +21,10 @@ func NewWalletCmd() *ishell.Cmd {
 				utils.FatalExit(err)
 				return
 			}
-
 			root.App().Printer().Success("keys generated:")
 			root.App().Printer().Say("prv key	%v", wallet.PrivAsString())
 			root.App().Printer().Say("pub key	%v", wallet.PubAsString())
 			root.App().Printer().Say("address	%v", wallet.Address.Address)
-
 		},
 	}
 
