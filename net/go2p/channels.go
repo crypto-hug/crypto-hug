@@ -6,3 +6,13 @@ type IO struct {
 	Error chan error
 	Done  chan struct{}
 }
+
+func NewIO() *IO {
+	result := &IO{}
+	result.In = make(chan *Message, 250)
+	result.Out = make(chan *Message, 250)
+	result.Error = make(chan error)
+	result.Done = make(chan struct{})
+
+	return result
+}
