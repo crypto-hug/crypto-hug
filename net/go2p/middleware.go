@@ -2,6 +2,7 @@ package go2p
 
 import (
 	"fmt"
+	"net"
 )
 
 type MiddlewareContext interface {
@@ -9,6 +10,7 @@ type MiddlewareContext interface {
 	Fail(err error)
 	Done()
 	Message() *Message
+	Connection() *net.Conn
 }
 
 type Middleware interface {
@@ -22,6 +24,10 @@ type InMiddleware interface {
 type OutMiddleware interface {
 	Middleware
 	Handle(message *Message)
+}
+type AcceptMiddleware interface {
+	Middleware
+	Handle()
 }
 
 type middlewareResult string
@@ -38,6 +44,7 @@ type middlewareContext struct {
 	message *Message
 	result  middlewareResult
 	err     error
+	conn    *net.Conn
 }
 
 func (self *middlewareContext) Next() {
@@ -52,6 +59,9 @@ func (self *middlewareContext) Fail(err error) {
 		panic(fmt.Sprintf("middleware %s failed withot to provide an error", self.name))
 	}
 	self.err = err
+}
+func (self *middlewareContext) Connection() *net.Conn {
+	return self.conn
 }
 
 func (self *middlewareContext) mustHaveResult() {
