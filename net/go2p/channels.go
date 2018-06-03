@@ -1,20 +1,20 @@
 package go2p
 
 type IO struct {
-	In   <-chan *Message
-	Out  chan<- *Message
-	Err  <-chan NetError
-	Done chan<- struct{}
+	In  <-chan *Message
+	Out chan<- *Message
+	Err <-chan NetError
+	//Done chan<- struct{}
 
-	in     chan<- *Message
-	out    <-chan *Message
-	err    chan<- NetError
-	done   <-chan struct{}
-	newCon chan *peer
-	endCon chan *peer
+	in   chan<- *Message
+	out  <-chan *Message
+	err  chan<- NetError
+	done <-chan struct{}
+	//newCon chan *peer
+	//endCon chan *peer
 }
 
-func NewIO() *IO {
+func newIO() *IO {
 	result := &IO{}
 	in := make(chan *Message, 250)
 	result.in = in
@@ -30,9 +30,9 @@ func NewIO() *IO {
 
 	done := make(chan struct{})
 	result.done = done
-	result.Done = done
+	//result.Done = done
 
-	result.newCon = make(chan *peer)
+	//result.newCon = make(chan *peer)
 
 	return result
 }

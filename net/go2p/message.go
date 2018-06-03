@@ -1,17 +1,17 @@
 package go2p
 
 type Message struct {
-	senderId   string
-	receiverId string
-	header     *MessageHeader
-	body       []byte
+	header *MessageHeader
+	body   []byte
 }
 
 type MessageHeader struct {
-	MessageSize uint32
-	HeaderSize  uint32
-	BodySize    uint32
-	Fields      []*HeaderField
+	senderAddr   string
+	receiverAddr string
+	MessageSize  uint32
+	HeaderSize   uint32
+	BodySize     uint32
+	Fields       []*HeaderField
 }
 
 type HeaderField struct {
