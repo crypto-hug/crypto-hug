@@ -36,6 +36,17 @@ func (self *Peers) Add(peer Peer) {
 	self.inner = append(self.inner, peer)
 }
 
+func (self *Peers) byId(id string) *peer {
+	for _, p := range self.inner {
+		peer := p.(*peer)
+		if peer.id == id {
+			return peer
+		}
+	}
+
+	return nil
+}
+
 func (self *Peers) Remove(peer Peer) {
 	for i := range self.inner {
 		if self.inner[i] == peer {
@@ -43,5 +54,16 @@ func (self *Peers) Remove(peer Peer) {
 			self.inner[len(self.inner)-1] = nil
 			self.inner = self.inner[:len(self.inner)-1]
 		}
+	}
+}
+func (self *Peers) Close(peer2Close Peer) {
+	p := peer2Close.(*peer)
+	p.conn.Close()
+}
+
+func (self *Peers) CloseAll() {
+	for _, p := range self.inner {
+		p2 := p.(*peer)
+		p2.conn.Close()
 	}
 }

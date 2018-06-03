@@ -1,8 +1,10 @@
 package go2p
 
 type Message struct {
-	header *MessageHeader
-	body   []byte
+	senderId   string
+	receiverId string
+	header     *MessageHeader
+	body       []byte
 }
 
 type MessageHeader struct {
