@@ -20,7 +20,7 @@ func startListener(inner net.Listener, io *IO, hub *hub) *listener {
 	result.io = io
 	result.hub = hub
 
-	go result.start()
+	go result.process()
 
 	return result
 }
@@ -39,14 +39,14 @@ func (self *listener) isClosed() bool {
 	return self.closed
 }
 
-func (self *listener) start() {
+func (self *listener) process() {
 	for {
 		tcpCon, err := self.inner.Accept()
 		if self.isClosed() {
 			return
 		} else if err == nil && tcpCon != nil {
-			peer := newPeerConn(tcpCon)
-			self.hub.add(peer)
+			adapter := newAdapter(tcpCon)
+			self.hub.add <- adapter
 		} else if tmpErr, ok := err.(net.Error); ok && tmpErr.Temporary() {
 			self.io.err <- &netError{err: err, isTemp: true}
 			continue

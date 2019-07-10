@@ -23,8 +23,9 @@ func (self *dialer) dial(address string) {
 			return
 		}
 
-		peer := newPeerConn(tcpCon)
-		self.hub.add(peer)
+		adapter := newAdapter(tcpCon)
+		self.hub.add <- adapter
+
 	}(address)
 
 }
