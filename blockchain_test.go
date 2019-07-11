@@ -13,3 +13,10 @@ func TestNewBlockchain(t *testing.T) {
 	fs := fs.NewFileFs(d + "/testdata/")
 	chug.NewBlockchain(fs)
 }
+
+func TestCreateGenesisTx(t *testing.T) {
+	d, _ := os.Getwd()
+	fs := fs.NewFileFs(d + "/testdata/")
+	bc := chug.NewBlockchain(fs)
+	bc.CreateGenesisTxIfNotExists()
+}

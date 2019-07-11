@@ -2,6 +2,7 @@ package chug
 
 import (
 	"bytes"
+	"fmt"
 	"time"
 
 	"github.com/crypto-hug/crypto-hug/utils"
@@ -29,6 +30,29 @@ type Transaction struct {
 	ValidatorLock   []byte
 
 	Data []byte
+}
+
+func (tx *Transaction) Check() error {
+	if err := tx.CheckHash(); err != nil {
+		return errors.Wrap(err, "failed hash check")
+	}
+	if err := tx.CheckLockIssuer(); err != nil {
+		return errors.Wrap(err, "failed issuer lock check")
+	}
+	if err := tx.CheckLockValidator(); err != nil {
+		return errors.Wrap(err, "failed validator lock check")
+	}
+
+	return nil
+}
+
+func (tx *Transaction) CheckHash() error {
+	hash := tx.getHash()
+	if !bytes.Equal(hash, tx.Hash) {
+		return errors.New(fmt.Sprintf("stored (%s) hash and actual hash (%s) are not equal", utils.Base58ToStr(tx.Hash), utils.Base58ToStr(hash)))
+	}
+
+	return nil
 }
 
 func (tx *Transaction) CheckLockIssuer() error {
@@ -60,14 +84,7 @@ func (tx *Transaction) LockValidator(privKey []byte) error {
 }
 
 func (tx *Transaction) HashTx() {
-	data := bytes.Join([][]byte{
-		[]byte(tx.Version),
-		[]byte(tx.Type),
-		[]byte(utils.Int64GetBytes(tx.Timestamp)),
-		tx.Data,
-	}, []byte{})
-
-	tx.Hash = utils.Hash(data)
+	tx.Hash = tx.getHash()
 }
 
 func NewTransaction(t TransactionType) *Transaction {
@@ -95,4 +112,16 @@ func (tx *Transaction) checkLock(pubKey []byte, lock []byte) error {
 
 	err := utils.SignCheck(pubKey, tx.Hash, lock)
 	return err
+}
+
+func (tx *Transaction) getHash() []byte {
+	data := bytes.Join([][]byte{
+		[]byte(tx.Version),
+		[]byte(tx.Type),
+		[]byte(utils.Int64GetBytes(tx.Timestamp)),
+		tx.Data,
+	}, []byte{})
+
+	result := utils.Hash(data)
+	return result
 }
