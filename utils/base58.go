@@ -18,3 +18,12 @@ func Base58FromString(str string) ([]byte, error) {
 
 	return result, err
 }
+
+func Base58FromStringMust(str string) []byte {
+	result, err := Base58FromString(str)
+	if err != nil {
+		panic(err)
+	}
+
+	return result
+}

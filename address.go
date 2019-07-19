@@ -7,19 +7,19 @@ import (
 	"golang.org/x/crypto/ripemd160"
 )
 
-const hugAddrVersion = 1
+const addrVersion = 1
 const addrCheckSumLen = 4
-const versionByte = byte(hugAddrVersion)
+const versionByte = byte(addrVersion)
 
-func HugAddrFromPubKey(pub []byte) (string, error) {
-	pubHashRaw, err := createPubKeyHash(pub)
+func NewAddress(data []byte) (string, error) {
+	dataHashRaw, err := createPubKeyHash(data)
 	if err != nil {
 		return "", err
 	}
 
-	pubHashVersioned := append([]byte{versionByte}, pubHashRaw...)
-	checksum := versionedPubHashChecksum(pubHashVersioned)
-	addressRaw := append(pubHashVersioned, checksum...)
+	dataHashVersioned := append([]byte{versionByte}, dataHashRaw...)
+	checksum := versionedPubHashChecksum(dataHashVersioned)
+	addressRaw := append(dataHashVersioned, checksum...)
 
 	addr := utils.Base58ToStr(addressRaw)
 

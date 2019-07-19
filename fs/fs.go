@@ -28,6 +28,11 @@ func NewFileFs(base string) *FileSystem {
 	return fs
 }
 
+func (fs *FileSystem) ListDir(path string) ([]os.FileInfo, error) {
+	result, err := afero.ReadDir(fs.Fs, path)
+	return result, err
+}
+
 func (fs *FileSystem) ReadFile(path string) ([]byte, error) {
 	f, err := fs.Open(path)
 	if err != nil {
@@ -51,7 +56,7 @@ func (fs *FileSystem) WriteFile(path string, data []byte) error {
 			return err
 		}
 	} else {
-		file, err = fs.Open(path)
+		file, err = fs.OpenFile(path, os.O_APPEND|os.O_WRONLY, os.ModeAppend)
 		if err != nil {
 			return err
 		}
@@ -60,6 +65,15 @@ func (fs *FileSystem) WriteFile(path string, data []byte) error {
 	_, err = file.Write(data)
 
 	return errors.WithStack(err)
+}
+
+func (fs *FileSystem) WriteIfNotExists(path string, data []byte) error {
+	if !fs.FileExists(path) {
+		err := fs.WriteFile(path, data)
+		return err
+	}
+
+	return nil
 }
 
 func (fs *FileSystem) FileExists(filePath string) bool {
