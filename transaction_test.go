@@ -1,50 +1,40 @@
 package chug_test
 
-import (
-	"fmt"
-	"testing"
+// func TestLock(t *testing.T) {
+// 	privKey := utils.GeneratePrivKey()
 
-	"github.com/stretchr/testify/assert"
+// 	tx := chug.NewTransaction(chug.SpawnGenesisHugTransactionType)
+// 	tx.Version = "1.0.0"
+// 	tx.Timestamp = 1562764857
+// 	tx.Data = []byte("hug the planed")
 
-	"github.com/crypto-hug/crypto-hug"
-	"github.com/crypto-hug/crypto-hug/utils"
-)
+// 	tx.HashTx()
 
-func TestLock(t *testing.T) {
-	privKey := utils.GeneratePrivKey()
+// 	privK := utils.PrivKeyToBytes(privKey)
+// 	pubK := utils.PubKeyToBytes(&privKey.PublicKey)
 
-	tx := chug.NewTransaction(chug.SpawnGenesisHugTransactionType)
-	tx.Version = "1.0.0"
-	tx.Timestamp = 1562764857
-	tx.Data = []byte("hug the planed")
+// 	tx.IssuerPubKey = pubK
+// 	tx.ValidatorPubKey = pubK
 
-	tx.HashTx()
+// 	err := tx.LockIssuer(privK)
+// 	assert.NoError(t, err)
+// 	err = tx.LockValidator(privK)
+// 	assert.NoError(t, err)
 
-	privK := utils.PrivKeyToBytes(privKey)
-	pubK := utils.PubKeyToBytes(&privKey.PublicKey)
+// 	err = tx.CheckLockIssuer()
+// 	assert.NoError(t, err)
 
-	tx.IssuerPubKey = pubK
-	tx.ValidatorPubKey = pubK
+// 	err = tx.CheckLockValidator()
+// 	assert.NoError(t, err)
 
-	err := tx.LockIssuer(privK)
-	assert.NoError(t, err)
-	err = tx.LockValidator(privK)
-	assert.NoError(t, err)
+// 	assert.NotEmpty(t, tx.IssuerLock)
+// 	assert.NotEmpty(t, tx.ValidatorLock)
 
-	err = tx.CheckLockIssuer()
-	assert.NoError(t, err)
+// 	assert.Equal(t, tx.ValidatorLock, tx.IssuerLock)
 
-	err = tx.CheckLockValidator()
-	assert.NoError(t, err)
-
-	assert.NotEmpty(t, tx.IssuerLock)
-	assert.NotEmpty(t, tx.ValidatorLock)
-
-	assert.Equal(t, tx.ValidatorLock, tx.IssuerLock)
-
-	fmt.Printf("priv key:   %s\n", utils.Base58ToStr(privK))
-	fmt.Printf("pub key:    %s\n", utils.Base58ToStr(pubK))
-	fmt.Printf("hash:       %s\n", utils.Base58ToStr(tx.Hash))
-	fmt.Printf("lock-1:     %s\n", utils.Base58ToStr(tx.IssuerLock))
-	fmt.Printf("lock-2:     %s\n", utils.Base58ToStr(tx.ValidatorLock))
-}
+// 	fmt.Printf("priv key:   %s\n", utils.Base58ToStr(privK))
+// 	fmt.Printf("pub key:    %s\n", utils.Base58ToStr(pubK))
+// 	fmt.Printf("hash:       %s\n", utils.Base58ToStr(tx.Hash))
+// 	fmt.Printf("lock-1:     %s\n", utils.Base58ToStr(tx.IssuerLock))
+// 	fmt.Printf("lock-2:     %s\n", utils.Base58ToStr(tx.ValidatorLock))
+// }

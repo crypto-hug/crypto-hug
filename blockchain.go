@@ -3,7 +3,7 @@ package chug
 import (
 	"github.com/crypto-hug/crypto-hug/fs"
 	"github.com/crypto-hug/crypto-hug/utils"
-	"github.com/v-braun/must"
+	"github.com/v-braun/go-must"
 )
 
 type Blockchain struct {

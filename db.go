@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/v-braun/must"
+	"github.com/v-braun/go-must"
 	"go.etcd.io/bbolt"
 )
 

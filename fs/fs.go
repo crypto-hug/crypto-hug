@@ -4,9 +4,10 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/v-braun/must"
+	"github.com/v-braun/go-must"
 
 	"github.com/spf13/afero"
 )
@@ -43,6 +44,15 @@ func (fs *FileSystem) ReadFile(path string) ([]byte, error) {
 	return data, errors.WithStack(err)
 }
 
+func (fs *FileSystem) FileName(path string) string {
+	return filepath.Base(path)
+}
+
+func (fs *FileSystem) FileNameWithoutExt(path string) string {
+	filename := fs.FileName(path)
+	return strings.TrimSuffix(filename, filepath.Ext(filename))
+}
+
 func (fs *FileSystem) WriteFile(path string, data []byte) error {
 	var file afero.File
 	var err error
@@ -56,7 +66,7 @@ func (fs *FileSystem) WriteFile(path string, data []byte) error {
 			return err
 		}
 	} else {
-		file, err = fs.OpenFile(path, os.O_APPEND|os.O_WRONLY, os.ModeAppend)
+		file, err = fs.OpenFile(path, os.O_WRONLY, os.ModeAppend)
 		if err != nil {
 			return err
 		}

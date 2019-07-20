@@ -1,8 +1,6 @@
 package chug
 
 import (
-	"path/filepath"
-
 	"github.com/crypto-hug/crypto-hug/fs"
 	"github.com/crypto-hug/crypto-hug/utils"
 	"github.com/pkg/errors"
@@ -25,9 +23,9 @@ func (s *TxStore) readTx(path string) (*Transaction, error) {
 		return nil, err
 	}
 
-	var tx *Transaction
+	tx := new(Transaction)
 	if err := utils.JsonParseRaw(content, tx); err != nil {
-		return nil, errors.Wrapf(err, "could not json parse tx in file %s", path)
+		return nil, errors.Wrapf(err, "could not json parse tx in file %s content: %s", path, string(content))
 	}
 
 	return tx, nil
@@ -55,7 +53,7 @@ func (s *TxStore) commitBlock(block *Block) error {
 	}
 
 	for i, tx := range block.Transactions {
-		addr, err := NewAddress(tx.Hash)
+		addr, err := NewAddress(tx.Hash.Bytes())
 		if err != nil {
 			return errors.Wrapf(err, "could not create address for tx (%d) in block %s", i, addr)
 		}
@@ -77,10 +75,11 @@ func (s *TxStore) CommitStagedTx() (*Block, error) {
 		return nil, err
 	}
 
-	if len(files) == 1 && filepath.Base(files[0].Name()) == s.conf.GenesisTx.Address {
-		tx, err := s.readTx(files[0].Name())
+	if len(files) == 1 && s.fs.FileNameWithoutExt(files[0].Name()) == s.conf.GenesisTx.Address {
+		genPath := stagePath + files[0].Name()
+		tx, err := s.readTx(genPath)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "failed read tx file %s", genPath)
 		}
 
 		genesisBlock := NewGenesisBlock(s.conf, tx)
@@ -95,14 +94,16 @@ func (s *TxStore) CommitStagedTx() (*Block, error) {
 			continue
 		}
 
-		content, err := s.fs.ReadFile(f.Name())
+		filePath := stagePath + f.Name()
+
+		content, err := s.fs.ReadFile(filePath)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "failed read tx file %s", filePath)
 		}
 
-		var tx *Transaction
+		tx := new(Transaction)
 		if err := utils.JsonParseRaw(content, tx); err != nil {
-			return nil, errors.Wrapf(err, "could not json parse tx in file %s", f.Name())
+			return nil, errors.Wrapf(err, "could not json parse tx in file %s", filePath)
 		}
 
 		block.Transactions = append(block.Transactions, tx)

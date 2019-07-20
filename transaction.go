@@ -7,7 +7,7 @@ import (
 
 	"github.com/crypto-hug/crypto-hug/utils"
 	"github.com/pkg/errors"
-	"github.com/v-braun/must"
+	"github.com/v-braun/go-must"
 )
 
 type TransactionType string
@@ -22,17 +22,17 @@ type Transaction struct {
 	Type      TransactionType
 	Timestamp int64
 
-	Hash []byte
+	Hash *utils.Base58JsonVal
 
-	IssuerPubKey []byte
-	IssuerLock   []byte
+	IssuerPubKey *utils.Base58JsonVal
+	IssuerLock   *utils.Base58JsonVal
 	IssuerEtag   string
 
-	ValidatorPubKey []byte
-	ValidatorLock   []byte
+	ValidatorPubKey *utils.Base58JsonVal
+	ValidatorLock   *utils.Base58JsonVal
 	ValidatorEtag   string
 
-	Data []byte
+	Data *utils.Base58JsonVal
 }
 
 func NewTransaction(t TransactionType) *Transaction {
@@ -47,22 +47,22 @@ func NewTransaction(t TransactionType) *Transaction {
 func NewGenesisTransaction(config *Config) *Transaction {
 	var err error
 	genesisTx := NewTransaction(SpawnGenesisHugTransactionType)
-	genesisTx.Data, err = utils.Base58FromString(config.GenesisTx.Data)
+	genesisTx.Data, err = utils.NewBase58JsonValFromString(config.GenesisTx.Data)
 	must.NoError(err, "could not parse %s (%s)", "config.GenesisTx.Data", config.GenesisTx.Data)
-	genesisTx.Hash, err = utils.Base58FromString(config.GenesisTx.Hash)
+	genesisTx.Hash, err = utils.NewBase58JsonValFromString(config.GenesisTx.Hash)
 	must.NoError(err, "could not parse %s (%s)", "config.GenesisTx.Hash", config.GenesisTx.Hash)
 
 	genesisTx.Timestamp = config.GenesisTx.Timestamp
 	genesisTx.Version = Version(config.GenesisTx.Version)
 
-	genesisTx.IssuerPubKey, err = utils.Base58FromString(config.GenesisTx.PubKey)
+	genesisTx.IssuerPubKey, err = utils.NewBase58JsonValFromString(config.GenesisTx.PubKey)
 	must.NoError(err, "could not parse %s (%s)", "config.GenesisTx.PubKey", config.GenesisTx.PubKey)
-	genesisTx.IssuerLock, err = utils.Base58FromString(config.GenesisTx.Lock)
+	genesisTx.IssuerLock, err = utils.NewBase58JsonValFromString(config.GenesisTx.Lock)
 	must.NoError(err, "could not parse %s (%s)", "config.GenesisTx.Lock", config.GenesisTx.Lock)
 
-	genesisTx.ValidatorPubKey, err = utils.Base58FromString(config.GenesisTx.PubKey)
+	genesisTx.ValidatorPubKey, err = utils.NewBase58JsonValFromString(config.GenesisTx.PubKey)
 	must.NoError(err, "could not parse %s (%s)", "config.GenesisTx.PubKey", config.GenesisTx.PubKey)
-	genesisTx.ValidatorLock, err = utils.Base58FromString(config.GenesisTx.Lock)
+	genesisTx.ValidatorLock, err = utils.NewBase58JsonValFromString(config.GenesisTx.Lock)
 	must.NoError(err, "could not parse %s (%s)", "config.GenesisTx.Lock", config.GenesisTx.Lock)
 
 	err = genesisTx.Check()
@@ -87,27 +87,27 @@ func (tx *Transaction) Check() error {
 
 func (tx *Transaction) CheckHash() error {
 	hash := tx.getHash()
-	if !bytes.Equal(hash, tx.Hash) {
-		return errors.New(fmt.Sprintf("stored (%s) hash and actual hash (%s) are not equal", utils.Base58ToStr(tx.Hash), utils.Base58ToStr(hash)))
+	if !bytes.Equal(hash, tx.Hash.Bytes()) {
+		return errors.New(fmt.Sprintf("stored (%s) hash and actual hash (%s) are not equal", tx.Hash, utils.Base58ToStr(hash)))
 	}
 
 	return nil
 }
 
 func (tx *Transaction) CheckLockIssuer() error {
-	err := tx.checkLock(tx.IssuerPubKey, tx.IssuerLock)
+	err := tx.checkLock(tx.IssuerPubKey.Bytes(), tx.IssuerLock.Bytes())
 	return err
 }
 
 func (tx *Transaction) CheckLockValidator() error {
-	err := tx.checkLock(tx.ValidatorPubKey, tx.ValidatorLock)
+	err := tx.checkLock(tx.ValidatorPubKey.Bytes(), tx.ValidatorLock.Bytes())
 	return err
 }
 
 func (tx *Transaction) LockIssuer(privKey []byte) error {
 	lock, err := tx.lock(privKey)
 	if err == nil {
-		tx.IssuerLock = lock
+		tx.IssuerLock = utils.NewBase58JsonValFromData(lock)
 	}
 
 	return err
@@ -116,55 +116,55 @@ func (tx *Transaction) LockIssuer(privKey []byte) error {
 func (tx *Transaction) LockValidator(privKey []byte) error {
 	lock, err := tx.lock(privKey)
 	if err == nil {
-		tx.ValidatorLock = lock
+		tx.ValidatorLock = utils.NewBase58JsonValFromData(lock)
 	}
 
 	return err
 }
 
 func (tx *Transaction) HashTx() {
-	tx.Hash = tx.getHash()
+	tx.Hash = utils.NewBase58JsonValFromData(tx.getHash())
 }
 
 func (tx *Transaction) Address() (string, error) {
-	result, err := NewAddress(tx.Hash)
+	result, err := NewAddress(tx.Hash.Bytes())
 	return result, err
 }
 
 func (tx *Transaction) IssuerAddress() (string, error) {
-	result, err := NewAddress(tx.IssuerPubKey)
+	result, err := NewAddress(tx.IssuerPubKey.Bytes())
 	return result, err
 }
 
 func (tx *Transaction) ValidatorAddress() (string, error) {
-	result, err := NewAddress(tx.ValidatorPubKey)
+	result, err := NewAddress(tx.ValidatorPubKey.Bytes())
 	return result, err
 }
 
 func (tx *Transaction) lock(privKey []byte) ([]byte, error) {
-	if len(tx.Hash) == 0 {
+	if len(tx.Hash.Bytes()) == 0 {
 		panic(errors.New("transaction is not hashed"))
 	}
 
-	lock, err := utils.SignCreate(privKey, tx.Hash)
+	lock, err := utils.SignCreate(privKey, tx.Hash.Bytes())
 	return lock, err
 }
 
 func (tx *Transaction) checkLock(pubKey []byte, lock []byte) error {
-	if len(tx.Hash) == 0 {
+	if len(tx.Hash.Bytes()) == 0 {
 		panic(errors.New("transaction is not hashed"))
 	}
 
-	err := utils.SignCheck(pubKey, tx.Hash, lock)
+	err := utils.SignCheck(pubKey, tx.Hash.Bytes(), lock)
 	return err
 }
 
 func (tx *Transaction) IsGenesisTx(conf *Config) bool {
-	if bytes.Compare(tx.Hash, utils.Base58FromStringMust(conf.GenesisTx.Hash)) == 0 &&
-		bytes.Compare(tx.IssuerLock, utils.Base58FromStringMust(conf.GenesisTx.Lock)) == 0 &&
-		bytes.Compare(tx.ValidatorLock, utils.Base58FromStringMust(conf.GenesisTx.Lock)) == 0 &&
-		bytes.Compare(tx.IssuerPubKey, utils.Base58FromStringMust(conf.GenesisTx.PubKey)) == 0 &&
-		bytes.Compare(tx.ValidatorPubKey, utils.Base58FromStringMust(conf.GenesisTx.PubKey)) == 0 &&
+	if tx.Hash.String() == conf.GenesisTx.Hash &&
+		tx.IssuerLock.String() == conf.GenesisTx.Lock &&
+		tx.ValidatorLock.String() == conf.GenesisTx.Lock &&
+		tx.IssuerPubKey.String() == conf.GenesisTx.PubKey &&
+		tx.ValidatorPubKey.String() == conf.GenesisTx.PubKey &&
 		tx.Timestamp == conf.GenesisTx.Timestamp &&
 		tx.Type == SpawnGenesisHugTransactionType &&
 		tx.Version == Version(conf.GenesisTx.Version) {
@@ -181,7 +181,7 @@ func (tx *Transaction) getHash() []byte {
 		[]byte(utils.Int64GetBytes(tx.Timestamp)),
 		[]byte(tx.IssuerEtag),
 		[]byte(tx.ValidatorEtag),
-		tx.Data,
+		tx.Data.Bytes(),
 	}, []byte{})
 
 	result := utils.Hash(data)
@@ -192,7 +192,7 @@ func (self Transactions) getHash() []byte {
 	var all [][]byte
 	for _, tx := range self {
 		var hash = tx.Hash
-		all = append(all, hash)
+		all = append(all, hash.Bytes())
 	}
 
 	result := bytes.Join(all, []byte{})
