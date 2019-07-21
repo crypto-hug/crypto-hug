@@ -2,13 +2,11 @@ package utils
 
 import (
 	"bytes"
-	"crypto"
+	"crypto/ecdsa"
+	"crypto/elliptic"
 	"crypto/rand"
-	"crypto/rsa"
 	"crypto/sha256"
-	"crypto/x509"
-
-	"github.com/pkg/errors"
+	"math/big"
 )
 
 func Hash(data []byte) []byte {
@@ -22,69 +20,67 @@ func HashAll(allData ...[]byte) []byte {
 	return result
 }
 
-func SignCheck(pubKey []byte, hash []byte, signature []byte) error {
-	pk, err := pubKeyFromBytes(pubKey)
+func CreateKeyPair() (private []byte, public []byte, err error) {
+	curve := defaultCurve()
+
+	privKey, err := ecdsa.GenerateKey(curve, rand.Reader)
 	if err != nil {
-		return err
+		return nil, nil, err
 	}
 
-	err = rsa.VerifyPKCS1v15(pk, crypto.SHA256, hash, signature)
-	return err
+	priv := privKey.D.Bytes()
+	pub := append(privKey.PublicKey.X.Bytes(), privKey.PublicKey.Y.Bytes()...)
+
+	return priv, pub, err
 }
 
-func SignCreate(privKey []byte, hash []byte) ([]byte, error) {
-	key, err := privFromBytes(privKey)
-	if err != nil {
-		return nil, err
-	}
-
-	signature, err := rsa.SignPKCS1v15(rand.Reader, key, crypto.SHA256, hash)
-	return signature, err
-}
-
-func PrivKeyFromString(key string) (*rsa.PrivateKey, error) {
-	data, err := Base58FromString(key)
+func SignCreate(priv []byte, pub []byte, hash []byte) (sig []byte, err error) {
+	privKey := unwrapPrivKey(priv, pub)
+	r, s, err := ecdsa.Sign(rand.Reader, &privKey, hash)
 	if err != nil {
 		return nil, err
 	}
 
-	result, err := privFromBytes(data)
-	return result, err
+	result := append(r.Bytes(), s.Bytes()...)
+	return result, nil
 }
 
-func PrivKeyToBytes(pk *rsa.PrivateKey) []byte {
-	result := x509.MarshalPKCS1PrivateKey(pk)
+func SignCheck(pub []byte, hash []byte, sig []byte) bool {
+	l := len(sig) / 2
+	r := big.Int{}
+	s := big.Int{}
+	r.SetBytes(sig[:l])
+	s.SetBytes(sig[l:])
+
+	pubKey := unwrapPubKey(pub)
+
+	result := ecdsa.Verify(&pubKey, hash, &r, &s)
 	return result
 }
 
-func PubKeyToBytes(pk *rsa.PublicKey) []byte {
-	result := x509.MarshalPKCS1PublicKey(pk)
+func unwrapPrivKey(priv []byte, pub []byte) ecdsa.PrivateKey {
+	pubKey := unwrapPubKey(pub)
+	d := big.Int{}
+	d.SetBytes(priv)
+
+	privKey := ecdsa.PrivateKey{PublicKey: pubKey, D: &d}
+
+	return privKey
+}
+
+func defaultCurve() elliptic.Curve {
+	return elliptic.P256()
+}
+
+func unwrapPubKey(pub []byte) ecdsa.PublicKey {
+	curve := defaultCurve()
+	l := len(pub) / 2
+	x := big.Int{}
+	y := big.Int{}
+	x.SetBytes(pub[:l])
+	y.SetBytes(pub[l:])
+
+	result := ecdsa.PublicKey{Curve: curve, X: &x, Y: &y}
+
 	return result
-}
-
-func GeneratePrivKey() *rsa.PrivateKey {
-	k, err := rsa.GenerateKey(rand.Reader, 2048)
-	if err != nil {
-		panic(errors.WithStack(err))
-	}
-
-	return k
-}
-
-func pubKeyFromBytes(data []byte) (*rsa.PublicKey, error) {
-	pub, err := x509.ParsePKCS1PublicKey(data)
-	if err != nil {
-		return nil, err
-	}
-
-	return pub, nil
-}
-
-func privFromBytes(data []byte) (*rsa.PrivateKey, error) {
-	priv, err := x509.ParsePKCS1PrivateKey(data)
-	if err != nil {
-		return nil, err
-	}
-
-	return priv, nil
 }

@@ -2,7 +2,6 @@ package chug
 
 import (
 	"github.com/crypto-hug/crypto-hug/fs"
-	"github.com/crypto-hug/crypto-hug/utils"
 	"github.com/pkg/errors"
 	yaml "gopkg.in/yaml.v2"
 )
@@ -31,12 +30,13 @@ const configPath = configDir + "main.yaml"
 func NewDefaultConfig() *Config {
 	c := new(Config)
 	c.GenesisTx.Version = "1.0.0"
-	c.GenesisTx.Timestamp = 1562764857
-	c.GenesisTx.PubKey = "4e1BUTgGBfqVWUkx6dR1NYi9u3GwGPS5uwuo44Bsp5MuJjEGGWC891PknRQBofGkS6MbsPbTLWmt2BZdQKYDgQUwmGqWsfpBHHVGXUfL6uNEiVuBq3AGKsN6uvcvsfjV8fnTiN2zLNwHYzwFEWBVPdcuzSKiXEoGKXB88YYs3RtYV4cubFDcgu4QR2GNLBu4YxvmuyUgBYFYuGRGgD388oM9VLfXVijsAJpUvA9YwRAN2DU4QVb7m78vhLwwhT5QJjiT2L7dVLS8tfY9uLuuSq15TFwdiNS11f1rAUde2nobLEqXp4DAVaUw2BbNvgCr7JmKgLMxVQPUQHwNb5unnHQsZuomgYwocNDhr2UyktfbmyLt8"
-	c.GenesisTx.Address = "nBV2ZZkcFqPU2ka7Xpdu59jUdcqnF4rRD"
-	c.GenesisTx.Hash = "5VJfiQNmqcKn7Wzyo25LEUfcPihtwLLNpiDzopWue9Wj"
-	c.GenesisTx.Lock = "8TDhCNb535YtS7AhrG7mfbkvCXEmer2329DkzZJt7VXBgjW2HmwJAg1eMeqfiics74FPQD8s9CNcbAXj7Y8CSAwkBD3desuG1ZoC8uNjXU9nVsZXHJ61sPTo5ZvQCpZrxsb5iyWYRt4Qas6Bc67FKtY24jV6WAUZZAsnveNoiiS1vo8kjrU2vDiRFStub9YHvNcnaE5UgACxFGuRQDHnJYqauYK8GgP6pNsoh4wVJxaQoVHn2Lgz6NQBMsRWnnnYrhbHE5iV21NxzxTjNuB4rzjXETK5nwSdPUDMPgUsfrg1hfXyeHvnvmpBKjouBF8DBvG22wM8G6WqUs3JN5wAHmmhE2bNA2"
-	c.GenesisTx.Data = utils.Base58ToStr([]byte("hug the planed"))
+	c.GenesisTx.Timestamp = 1563731742
+	// priv key: 69xUcVszy2udRNngci9EWMopFZMhsRsKW8vcYz19drZZ
+	c.GenesisTx.PubKey = "2yU5NpDEB3ed9RSL84jXswGCVDW3Mydj9oaGb1MhhLUo7YuL1QMzbBYF3XdMkwZZUBL4mo2czDQeDuNagUifmufn"
+	c.GenesisTx.Address = "i6hAWT3BrRBCBehfCJdncLwp3HpSCSpPF"
+	c.GenesisTx.Hash = "9zXkjGdPTHupSieTqx11GF67TLZ6fgmBi4y7sqQCnvgJ"
+	c.GenesisTx.Lock = "iF1g9zPvp5wKSnhqde2zWiKYE7sbD7sSoTtej2WbBRQAvXhPAsNPrg5n5tgdS1Wvw96cjZ3SEJdcAP2qnQCUDCx"
+	c.GenesisTx.Data = "9hdjRw5sudFHrEtyUE" //utils.Base58ToStr([]byte("hug the planed"))
 
 	c.Paths.BlockDir = "./blocks/"
 	c.Paths.StatesDir = "./states/"

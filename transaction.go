@@ -66,7 +66,7 @@ func NewGenesisTransaction(config *Config) *Transaction {
 	must.NoError(err, "could not parse %s (%s)", "config.GenesisTx.Lock", config.GenesisTx.Lock)
 
 	err = genesisTx.Check()
-	must.NoError(err, "genesis tx failed checks")
+	must.NoError(err, "genesis tx failed checks: %s", err)
 
 	return genesisTx
 }
@@ -75,11 +75,11 @@ func (tx *Transaction) Check() error {
 	if err := tx.CheckHash(); err != nil {
 		return errors.Wrap(err, "failed hash check")
 	}
-	if err := tx.CheckLockIssuer(); err != nil {
-		return errors.Wrap(err, "failed issuer lock check")
+	if res := tx.CheckLockIssuer(); res == false {
+		return errors.New("failed issuer lock check")
 	}
-	if err := tx.CheckLockValidator(); err != nil {
-		return errors.Wrap(err, "failed validator lock check")
+	if res := tx.CheckLockValidator(); res == false {
+		return errors.New("failed validator lock check")
 	}
 
 	return nil
@@ -94,18 +94,18 @@ func (tx *Transaction) CheckHash() error {
 	return nil
 }
 
-func (tx *Transaction) CheckLockIssuer() error {
-	err := tx.checkLock(tx.IssuerPubKey.Bytes(), tx.IssuerLock.Bytes())
-	return err
+func (tx *Transaction) CheckLockIssuer() bool {
+	res := tx.checkLock(tx.IssuerPubKey.Bytes(), tx.IssuerLock.Bytes())
+	return res
 }
 
-func (tx *Transaction) CheckLockValidator() error {
-	err := tx.checkLock(tx.ValidatorPubKey.Bytes(), tx.ValidatorLock.Bytes())
-	return err
+func (tx *Transaction) CheckLockValidator() bool {
+	res := tx.checkLock(tx.ValidatorPubKey.Bytes(), tx.ValidatorLock.Bytes())
+	return res
 }
 
-func (tx *Transaction) LockIssuer(privKey []byte) error {
-	lock, err := tx.lock(privKey)
+func (tx *Transaction) LockIssuer(privKey []byte, pubKey []byte) error {
+	lock, err := tx.lock(privKey, pubKey)
 	if err == nil {
 		tx.IssuerLock = utils.NewBase58JsonValFromData(lock)
 	}
@@ -113,8 +113,8 @@ func (tx *Transaction) LockIssuer(privKey []byte) error {
 	return err
 }
 
-func (tx *Transaction) LockValidator(privKey []byte) error {
-	lock, err := tx.lock(privKey)
+func (tx *Transaction) LockValidator(privKey []byte, pubKey []byte) error {
+	lock, err := tx.lock(privKey, pubKey)
 	if err == nil {
 		tx.ValidatorLock = utils.NewBase58JsonValFromData(lock)
 	}
@@ -141,28 +141,28 @@ func (tx *Transaction) ValidatorAddress() (string, error) {
 	return result, err
 }
 
-func (tx *Transaction) lock(privKey []byte) ([]byte, error) {
+func (tx *Transaction) lock(privKey []byte, pubKey []byte) ([]byte, error) {
 	if len(tx.Hash.Bytes()) == 0 {
 		panic(errors.New("transaction is not hashed"))
 	}
 
-	lock, err := utils.SignCreate(privKey, tx.Hash.Bytes())
+	lock, err := utils.SignCreate(privKey, pubKey, tx.Hash.Bytes())
 	return lock, err
 }
 
-func (tx *Transaction) checkLock(pubKey []byte, lock []byte) error {
+func (tx *Transaction) checkLock(pubKey []byte, lock []byte) bool {
 	if len(tx.Hash.Bytes()) == 0 {
 		panic(errors.New("transaction is not hashed"))
 	}
 
-	err := utils.SignCheck(pubKey, tx.Hash.Bytes(), lock)
-	return err
+	res := utils.SignCheck(pubKey, tx.Hash.Bytes(), lock)
+
+	return res
 }
 
 func (tx *Transaction) IsGenesisTx(conf *Config) bool {
 	if tx.Hash.String() == conf.GenesisTx.Hash &&
 		tx.IssuerLock.String() == conf.GenesisTx.Lock &&
-		tx.ValidatorLock.String() == conf.GenesisTx.Lock &&
 		tx.IssuerPubKey.String() == conf.GenesisTx.PubKey &&
 		tx.ValidatorPubKey.String() == conf.GenesisTx.PubKey &&
 		tx.Timestamp == conf.GenesisTx.Timestamp &&
