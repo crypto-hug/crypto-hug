@@ -1,9 +1,11 @@
 package chug
 
 import (
+	"github.com/bitly/go-simplejson"
 	"github.com/buger/jsonparser"
 	"github.com/crypto-hug/crypto-hug/fs"
 	"github.com/pkg/errors"
+	must "github.com/v-braun/go-must"
 )
 
 type StateStore struct {
@@ -49,7 +51,7 @@ func (sm *StateStore) HugSetEtag(address string, etag string) error {
 		return err
 	}
 
-	data, err = jsonparser.Set(data, []byte(etag), "etag")
+	data, err = jsonparser.Set(data, jsonparserSetWrapStr(etag), "etag")
 	if err != nil {
 		return err
 	}
@@ -59,22 +61,24 @@ func (sm *StateStore) HugSetEtag(address string, etag string) error {
 	return err
 }
 
+func jsonparserSetWrapStr(val string) []byte {
+	return []byte("\"" + val + "\"")
+}
+
 func (sm *StateStore) HugCreateIfNotExists(address string) error {
 	var err error
 
 	path := sm.conf.Paths.HugsDir + address + "/links.json"
-	if err = sm.fs.WriteIfNotExists(path, []byte("{}")); err != nil {
-		return err
-	}
+	sm.fs.WriteIfNotExistsMust(path, []byte(`{
+		"links": {}
+	}`))
 
 	path = sm.conf.Paths.HugsDir + address + "/hug.json"
-	if err = sm.fs.WriteIfNotExists(path, []byte(`{
+	sm.fs.WriteIfNotExistsMust(path, []byte(`{
 	"ver": "`+string(HugVersion)+`",
 	"addr": "`+address+`",
 	"etag": ""
-}`)); err != nil {
-		return err
-	}
+}`))
 
 	return err
 }
@@ -86,45 +90,44 @@ func (sm *StateStore) HugAddLinks(ctx *txProcessCtx) error {
 	fromPath := sm.conf.Paths.HugsDir + from + "/links.json"
 	toPath := sm.conf.Paths.HugsDir + to + "/links.json"
 
-	fromFile, err := sm.fs.ReadFile(fromPath)
-	if err != nil {
-		return errors.Wrapf(err, "could not read hug file [%s]", fromPath)
-	}
+	fromFile := readJSONFromFsMust(sm.fs, fromPath)
+	toFile := readJSONFromFsMust(sm.fs, toPath)
 
-	toFile, err := sm.fs.ReadFile(toPath)
-	if err != nil {
-		return errors.Wrapf(err, "could not read hug file [%s]", toPath)
-	}
-
-	_, res, _, err := jsonparser.Get(fromFile, "links", to)
-	if res != jsonparser.NotExist && err != nil {
-		return errors.Wrapf(err, "could not parse json file [%s]", fromFile)
-	}
-
-	if res != jsonparser.NotExist {
+	res := fromFile.GetPath("links", to)
+	if res.Interface() != nil {
 		return errors.Errorf("hug %s already linked to %s", from, to)
 	}
 
-	_, res, _, err = jsonparser.Get(toFile, "links", to)
-	if res != jsonparser.NotExist && err != nil {
-		return errors.Wrapf(err, "could not parse json file [%s]", toFile)
-	}
-
-	if res != jsonparser.NotExist {
+	res = toFile.GetPath("links", to)
+	if res.Interface() != nil {
 		return errors.Errorf("hug %s already linked to %s", to, from)
 	}
 
-	jsonparser.Set(fromFile, []byte(ctx.address), "links", to, "tx")
-	jsonparser.Set(fromFile, []byte(string(ctx.tx.Timestamp)), "links", to, "date")
-	if err := sm.fs.WriteFile(fromPath, fromFile); err != nil {
-		return errors.Wrapf(err, "could not write hug file [%s]", from)
-	}
+	fromFile.SetPath([]string{"links", to, "tx"}, ctx.address)
+	fromFile.SetPath([]string{"links", to, "date"}, ctx.tx.Timestamp)
+	storeJSONToFsMust(fromFile, sm.fs, fromPath)
 
-	jsonparser.Set(toFile, []byte(ctx.address), "links", from, "tx")
-	jsonparser.Set(toFile, []byte(string(ctx.tx.Timestamp)), "links", from, "date")
-	if err := sm.fs.WriteFile(toPath, toFile); err != nil {
-		return errors.Wrapf(err, "could not write hug file [%s]", to)
-	}
+	toFile.SetPath([]string{"links", from, "tx"}, ctx.address)
+	toFile.SetPath([]string{"links", from, "date"}, ctx.tx.Timestamp)
+	storeJSONToFsMust(toFile, sm.fs, toPath)
 
 	return nil
+}
+
+func readJSONFromFsMust(fs *fs.FileSystem, path string) *simplejson.Json {
+	data, err := fs.ReadFile(path)
+	must.NoError(err, "could not read json file [%s]", path)
+
+	file, err := simplejson.NewJson(data)
+	must.NoError(err, "could parse json file [%s]", path)
+
+	return file
+}
+
+func storeJSONToFsMust(json *simplejson.Json, fs *fs.FileSystem, path string) {
+	data, err := json.Encode()
+	must.NoError(err, "could not gen raw data from json to store in file [%s]", path)
+
+	err = fs.WriteFile(path, data)
+	must.NoError(err, "could not write file [%s]", path)
 }

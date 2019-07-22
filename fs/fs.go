@@ -33,7 +33,11 @@ func (fs *FileSystem) ListDir(path string) ([]os.FileInfo, error) {
 	result, err := afero.ReadDir(fs.Fs, path)
 	return result, err
 }
-
+func (fs *FileSystem) ReadFileMust(path string) []byte {
+	data, err := fs.ReadFile(path)
+	must.NoError(err, "could not read file %s", path)
+	return data
+}
 func (fs *FileSystem) ReadFile(path string) ([]byte, error) {
 	f, err := fs.Open(path)
 	if err != nil {
@@ -84,6 +88,11 @@ func (fs *FileSystem) WriteIfNotExists(path string, data []byte) error {
 	}
 
 	return nil
+}
+
+func (fs *FileSystem) WriteIfNotExistsMust(path string, data []byte) {
+	err := fs.WriteIfNotExists(path, data)
+	must.NoError(err, "could not write file %s", path)
 }
 
 func (fs *FileSystem) FileExists(filePath string) bool {

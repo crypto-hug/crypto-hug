@@ -75,6 +75,41 @@ func newFileFSTestDir() *fs.FileSystem {
 	return fs
 }
 
+func newTestGiveHugTx(issuer *chug.Wallet, validator *chug.Wallet, bc *chug.Blockchain) *chug.Transaction {
+	issuerETag, err := bc.States().HugGetEtag(issuer.Addr)
+	must.NoError(err, "could not get etag for issuer")
+
+	validatorETag, err := bc.States().HugGetEtag(validator.Addr)
+	must.NoError(err, "could not get etag for validator")
+
+	tx := chug.NewTransaction(chug.GiveHugTransactionType)
+	tx.IssuerEtag = issuerETag
+	tx.ValidatorEtag = validatorETag
+	tx.HashTx()
+
+	err = tx.LockIssuer(issuer.PrivK, issuer.PubK)
+	must.NoError(err, "could not lock issuer")
+
+	err = tx.LockValidator(validator.PrivK, validator.PubK)
+	must.NoError(err, "could not lock validator")
+
+	return tx
+}
+
+func newTestBlockchain() (*chug.Blockchain, *txWithSecret) {
+	genTx := newTestGenesisTxWithSecret()
+	cfg := newTestConfig(genTx)
+	fs := newFileFSTestDir()
+	bc := chug.NewBlockchain(fs, cfg)
+
+	err := bc.ProcessTransaction(genTx.Transaction)
+	if err != nil {
+		panic(fmt.Sprintf("could not process gen tx: %+v", err))
+	}
+
+	return bc, genTx
+}
+
 func TestCreateGenesisTx(t *testing.T) {
 	fs := newFileFSTestDir()
 	// fs := fs.NewFs4Tests()
@@ -107,6 +142,52 @@ func TestProcessTxWithoutGenesisTxShouldFail(t *testing.T) {
 	err = bc.ProcessTransaction(tx)
 
 	assert.Error(t, err, err.Error())
+}
+
+func TestBlockSizeLimit(t *testing.T) {
+	fs := newFileFSTestDir()
+
+	genTx := newTestGenesisTxWithSecret()
+	cfg := newTestConfig(genTx)
+	cfg.Blocks.Size = 1
+
+	bc := chug.NewBlockchain(fs, cfg)
+	bc.ProcessTransaction(genTx.Transaction)
+	assert.Equal(t, 1, bc.Store().BlockCount())
+
+	usr1 := chug.NewWalletFromKeys(genTx.privK, genTx.pubK)
+	usr2 := chug.NewWallet()
+	tx := newTestGiveHugTx(usr1, usr2, bc)
+
+	bc.ProcessTransaction(tx)
+	assert.Equal(t, 2, bc.Store().BlockCount())
+
+}
+
+func TestSelfHugNotPossible(t *testing.T) {
+	bc, genTx := newTestBlockchain()
+
+	usr1 := chug.NewWalletFromKeys(genTx.privK, genTx.pubK)
+
+	tx := newTestGiveHugTx(usr1, usr1, bc)
+
+	err := bc.ProcessTransaction(tx)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "self hugging is not possible for address")
+}
+
+func TestCreateMultipleHugs(t *testing.T) {
+	// fs := fs.NewFs4Tests()
+
+	bc, genTx := newTestBlockchain()
+
+	usr1 := chug.NewWalletFromKeys(genTx.privK, genTx.pubK)
+	usr2 := chug.NewWallet()
+
+	tx := newTestGiveHugTx(usr1, usr2, bc)
+
+	err := bc.ProcessTransaction(tx)
+	assert.NoError(t, err)
 }
 
 func _TestGenerateGenTx(t *testing.T) {

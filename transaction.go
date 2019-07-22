@@ -76,10 +76,10 @@ func (tx *Transaction) Check() error {
 		return errors.Wrap(err, "failed hash check")
 	}
 	if res := tx.CheckLockIssuer(); res == false {
-		return errors.New("failed issuer lock check")
+		return errors.Errorf("failed issuer lock check. pub: %s | hash: %s | lock: %s", tx.IssuerLock, tx.Hash, tx.IssuerLock)
 	}
 	if res := tx.CheckLockValidator(); res == false {
-		return errors.New("failed validator lock check")
+		return errors.Errorf("failed validator lock check. pub: %s | hash: %s | lock: %s ", tx.ValidatorPubKey, tx.Hash, tx.ValidatorLock)
 	}
 
 	return nil
@@ -105,6 +105,7 @@ func (tx *Transaction) CheckLockValidator() bool {
 }
 
 func (tx *Transaction) LockIssuer(privKey []byte, pubKey []byte) error {
+	tx.IssuerPubKey = utils.NewBase58JsonValFromData(pubKey)
 	lock, err := tx.lock(privKey, pubKey)
 	if err == nil {
 		tx.IssuerLock = utils.NewBase58JsonValFromData(lock)
@@ -114,6 +115,7 @@ func (tx *Transaction) LockIssuer(privKey []byte, pubKey []byte) error {
 }
 
 func (tx *Transaction) LockValidator(privKey []byte, pubKey []byte) error {
+	tx.ValidatorPubKey = utils.NewBase58JsonValFromData(pubKey)
 	lock, err := tx.lock(privKey, pubKey)
 	if err == nil {
 		tx.ValidatorLock = utils.NewBase58JsonValFromData(lock)
@@ -151,11 +153,12 @@ func (tx *Transaction) lock(privKey []byte, pubKey []byte) ([]byte, error) {
 }
 
 func (tx *Transaction) checkLock(pubKey []byte, lock []byte) bool {
-	if len(tx.Hash.Bytes()) == 0 {
+	hash := tx.Hash.Bytes()
+	if len(hash) == 0 {
 		panic(errors.New("transaction is not hashed"))
 	}
 
-	res := utils.SignCheck(pubKey, tx.Hash.Bytes(), lock)
+	res := utils.SignCheck(pubKey, hash, lock)
 
 	return res
 }

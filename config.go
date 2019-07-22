@@ -22,6 +22,9 @@ type Config struct {
 		HugsDir     string
 		TxStagePath string
 	}
+	Blocks struct {
+		Size int
+	}
 }
 
 const configDir = "./config/"
@@ -42,6 +45,9 @@ func NewDefaultConfig() *Config {
 	c.Paths.StatesDir = "./states/"
 	c.Paths.HugsDir = c.Paths.StatesDir + "hugs/"
 	c.Paths.TxStagePath = c.Paths.StatesDir + "tx-stage/"
+
+	c.Blocks.Size = 100
+
 	return c
 }
 func NewConfigFromFileOrDefault(fs *fs.FileSystem) (*Config, error) {

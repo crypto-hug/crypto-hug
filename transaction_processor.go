@@ -43,13 +43,21 @@ func (proc *TxProcessor) Process(tx *Transaction) error {
 
 	if ctx.isGenesisTx {
 		err = proc.processGenesisTx(ctx)
-		return err
 	} else if ctx.tx.Type == GiveHugTransactionType {
 		err = proc.processGiveHugTx(ctx)
-		return err
 	} else {
-		return errors.Errorf("unknwon tx type {%s}", ctx.tx.Type)
+		err = errors.Errorf("unknwon tx type {%s}", ctx.tx.Type)
 	}
+
+	if err != nil {
+		return err
+	}
+
+	if ctx.isGenesisTx || proc.txStore.StagedTxCount() >= proc.config.Blocks.Size {
+		proc.txStore.CommitStagedTx()
+	}
+
+	return nil
 }
 
 func (proc *TxProcessor) processGenesisTx(ctx *txProcessCtx) error {
@@ -97,6 +105,10 @@ func (proc *TxProcessor) validate(ctx *txProcessCtx) error {
 
 	if !proc.states.HugExists(ctx.issuerAddress) && !ctx.isGenesisTx {
 		return errors.Errorf("issuer hug [%s] does not exists", ctx.issuerAddress)
+	}
+
+	if ctx.issuerAddress == ctx.validatorAddress && !ctx.isGenesisTx {
+		return errors.Errorf("self hugging is not possible for address [%s]", ctx.issuerAddress)
 	}
 
 	issuerEtag, err := proc.states.HugGetEtag(ctx.issuerAddress)

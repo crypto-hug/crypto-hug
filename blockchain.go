@@ -25,6 +25,14 @@ func NewBlockchain(fs *fs.FileSystem, config *Config) *Blockchain {
 	return bc
 }
 
+func (bc *Blockchain) States() *StateStore {
+	return bc.states
+}
+
+func (bc *Blockchain) Store() *TxStore {
+	return bc.store
+}
+
 func (bc *Blockchain) ProcessTransaction(tx *Transaction) error {
 	err := bc.proc.Process(tx)
 	return err
@@ -44,6 +52,4 @@ func (bc *Blockchain) CreateGenesisBlockIfNotExists() {
 	err = bc.proc.Process(genesisTx)
 	must.NoError(err, "unexpected genesis block processing")
 
-	_, err = bc.store.CommitStagedTx()
-	must.NoError(err, "could not commit staged genesis tx")
 }

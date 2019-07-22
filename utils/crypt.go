@@ -29,7 +29,14 @@ func CreateKeyPair() (private []byte, public []byte, err error) {
 	}
 
 	priv := privKey.D.Bytes()
-	pub := append(privKey.PublicKey.X.Bytes(), privKey.PublicKey.Y.Bytes()...)
+
+	x := privKey.PublicKey.X.Bytes()
+	x = append(bytes.Repeat([]byte{0x00}, 32-len(x)), x...)
+
+	y := privKey.PublicKey.Y.Bytes()
+	y = append(bytes.Repeat([]byte{0x00}, 32-len(y)), y...)
+
+	pub := append(x, y...)
 
 	return priv, pub, err
 }
@@ -41,7 +48,14 @@ func SignCreate(priv []byte, pub []byte, hash []byte) (sig []byte, err error) {
 		return nil, err
 	}
 
-	result := append(r.Bytes(), s.Bytes()...)
+	rb := r.Bytes()
+	rb = append(bytes.Repeat([]byte{0x00}, 32-len(rb)), rb...)
+
+	sb := s.Bytes()
+	sb = append(bytes.Repeat([]byte{0x00}, 32-len(sb)), sb...)
+
+	result := append(rb, sb...)
+
 	return result, nil
 }
 

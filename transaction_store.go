@@ -4,6 +4,7 @@ import (
 	"github.com/crypto-hug/crypto-hug/fs"
 	"github.com/crypto-hug/crypto-hug/utils"
 	"github.com/pkg/errors"
+	"github.com/v-braun/go-must"
 )
 
 type TxStore struct {
@@ -68,24 +69,37 @@ func (s *TxStore) commitBlock(block *Block) error {
 	return nil
 }
 
-func (s *TxStore) CommitStagedTx() (*Block, error) {
+func (s *TxStore) StagedTxCount() int {
 	stagePath := s.conf.Paths.TxStagePath
 	files, err := s.fs.ListDir(stagePath)
-	if err != nil {
-		return nil, err
-	}
+	must.NoError(err, "could not get stagepath file count")
+	return len(files)
+}
+
+func (s *TxStore) BlockCount() int {
+	blocksPath := s.conf.Paths.BlockDir
+	files, err := s.fs.ListDir(blocksPath)
+	must.NoError(err, "could not get blocks file count")
+
+	return len(files)
+
+}
+
+func (s *TxStore) CommitStagedTx() *Block {
+	stagePath := s.conf.Paths.TxStagePath
+	files, err := s.fs.ListDir(stagePath)
+	must.NoError(err, "failed list stage path %s", stagePath)
 
 	if len(files) == 1 && s.fs.FileNameWithoutExt(files[0].Name()) == s.conf.GenesisTx.Address {
 		genPath := stagePath + files[0].Name()
 		tx, err := s.readTx(genPath)
-		if err != nil {
-			return nil, errors.Wrapf(err, "failed read tx file %s", genPath)
-		}
+		must.NoError(err, "failed read tx file %s", genPath)
 
 		genesisBlock := NewGenesisBlock(s.conf, tx)
 		err = s.commitBlock(genesisBlock)
+		must.NoError(err, "failed commit block file %s", genPath)
 
-		return genesisBlock, err
+		return genesisBlock
 	}
 
 	block := NewBlock()
@@ -96,20 +110,19 @@ func (s *TxStore) CommitStagedTx() (*Block, error) {
 
 		filePath := stagePath + f.Name()
 
-		content, err := s.fs.ReadFile(filePath)
-		if err != nil {
-			return nil, errors.Wrapf(err, "failed read tx file %s", filePath)
-		}
+		content := s.fs.ReadFileMust(filePath)
 
 		tx := new(Transaction)
-		if err := utils.JsonParseRaw(content, tx); err != nil {
-			return nil, errors.Wrapf(err, "could not json parse tx in file %s", filePath)
-		}
+		err := utils.JsonParseRaw(content, tx)
+		must.NoError(err, "could not json parse tx in file %s", filePath)
 
 		block.Transactions = append(block.Transactions, tx)
 	}
 
-	return block, nil
+	err = s.commitBlock(block)
+	must.NoError(err, "failed commit block file %s", block.Hash)
+
+	return block
 }
 
 func (s *TxStore) StageTx(ctx *txProcessCtx) error {
