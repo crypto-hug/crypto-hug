@@ -29,6 +29,12 @@ func NewFileFs(base string) *FileSystem {
 	return fs
 }
 
+func NewCWDFileFs(subdir string) *FileSystem {
+	d, _ := os.Getwd()
+	fs := NewFileFs(d + "/" + subdir)
+	return fs
+}
+
 func (fs *FileSystem) ListDir(path string) ([]os.FileInfo, error) {
 	result, err := afero.ReadDir(fs.Fs, path)
 	return result, err

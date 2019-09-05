@@ -51,5 +51,4 @@ func (bc *Blockchain) CreateGenesisBlockIfNotExists() {
 
 	err = bc.proc.Process(genesisTx)
 	must.NoError(err, "unexpected genesis block processing")
-
 }
