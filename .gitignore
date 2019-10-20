@@ -14,3 +14,7 @@
 testdata
 
 _archive_v1
+
+vendor/
+bin/
+blockchain_data/

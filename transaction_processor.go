@@ -127,7 +127,7 @@ func (proc *TxProcessor) validate(ctx *txProcessCtx) error {
 		return errors.Wrapf(err, "validator hug [%s] failed get etag", ctx.validatorAddress)
 	}
 	if validatorEtag != ctx.tx.ValidatorEtag {
-		return errors.Errorf("actual validator etag [%s] does not match with tx issuer etag [%s]", validatorEtag, ctx.tx.ValidatorEtag)
+		return errors.Errorf("actual validator etag [%s] does not match with tx validator etag [%s]", validatorEtag, ctx.tx.ValidatorEtag)
 	}
 
 	return nil
