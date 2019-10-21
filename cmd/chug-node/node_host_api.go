@@ -58,8 +58,9 @@ func newApi(host *chug.NodeHost) *api {
 	result.Router = mux.NewRouter()
 	result.host = host
 
-	result.Post("/tx", result.txPost)
-	result.Get("/version", result.versionGet)
+	result.Post("/tx", result.postTx)
+	result.Get("/version", result.getVersion)
+	result.Get("/hug/{address}/etag", result.getHugEtag)
 
 	return result
 }

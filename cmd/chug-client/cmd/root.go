@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/crypto-hug/crypto-hug/cmd/chug-node/client"
@@ -21,6 +22,12 @@ var (
 
 // Execute executes the root command.
 func Execute() error {
+	defer func() {
+		if err := recover(); err != nil {
+			fmt.Println(err)
+		}
+	}()
+
 	return root.Execute()
 }
 

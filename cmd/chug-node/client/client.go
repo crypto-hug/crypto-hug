@@ -104,7 +104,14 @@ func (cli *Client) MustGetVersion() *Ver {
 	return res
 }
 
-func (cli *Client) SendTransaction(tx *chug.Transaction) error {
+func (cli *Client) PostTransaction(tx *chug.Transaction) error {
 	err := cli.PostJson("/tx", tx, nil)
 	return err
+}
+
+func (cli *Client) GetHugEtag(addr string) (string, error) {
+	res := struct{ Etag string }{Etag: ""}
+	err := cli.GetJson("/hug/"+addr+"/etag", &res)
+
+	return res.Etag, err
 }

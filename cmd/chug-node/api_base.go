@@ -46,6 +46,9 @@ func (a *ApiBase) PanicWhenError(err error, code int, msg interface{}) {
 	if err == nil {
 		return
 	}
+	if msg == nil {
+		msg = err.Error()
+	}
 
 	panic(&ApiError{
 		Code:    code,

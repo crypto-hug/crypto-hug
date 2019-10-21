@@ -49,3 +49,11 @@ func (nh *NodeHost) ProcessTransaction(tx *Transaction) error {
 	err := nh.bc.ProcessTransaction(tx)
 	return err
 }
+
+func (nh *NodeHost) GetHugEtag(address string) (string, error) {
+	nh.lock.Lock()
+	defer nh.lock.Unlock()
+
+	res, err := nh.bc.states.HugGetEtag(address)
+	return res, err
+}

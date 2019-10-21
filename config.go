@@ -27,7 +27,7 @@ type Config struct {
 	}
 }
 
-const configDir = "./config/"
+const configDir = "./_config/"
 const configPath = configDir + "main.yaml"
 
 func NewDefaultConfig() *Config {

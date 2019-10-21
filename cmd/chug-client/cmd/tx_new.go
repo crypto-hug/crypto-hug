@@ -1,11 +1,10 @@
 package cmd
 
 import (
-	"bytes"
 	"fmt"
-	"html/template"
 
 	chug "github.com/crypto-hug/crypto-hug"
+	"github.com/crypto-hug/crypto-hug/cmd/chug-client/print"
 	"github.com/crypto-hug/crypto-hug/utils"
 	"github.com/v-braun/go-must"
 
@@ -44,13 +43,12 @@ generate spawn hug tx:
 ./bin/chug tx new \
 --issuer-pub=4AbRc2eSQetaPgzDqrknhyuyP6v1yrLHNkXwMsoGQkXqcFwArtNCxY869baaq5aYhpAFzQLxfLBfF7KWN4kW1BsK \
 --issuer-priv=3FMrspUmNTh6n2ozmjRPpT8TMsq1dNcA6Nmdzqr4mDdd \
---issuer-etag=oREHn5qkBqg78xuvu6FTnarMjShzpdD9c \
 --validator-pub=5cVgdi1iJV346ke6Uae9aJbwtX5wNTWczfxQf6fShXsMf3Dz4h29ifzboWC3RKLAJuqJkpXu2HbfzjV7XgKziCTB \
 --validator-priv=7BRMCLDE6mUvoi9iqv5Nh6YQBhJxLyRekvQVL3Q9QGLM \
---validator-etag= \
 --data="hug the universe" \
 --print=true \
---send
+--send \
+--query-etag
 
 
 */
@@ -85,14 +83,14 @@ func askCreateTxQuestions(isGenesis bool) *chug.Transaction {
 	}
 
 	questions := []*survey.Question{}
-	if !isGenesis && viper.GetString("issuer-etag") == "" {
+	if !isGenesis && !viper.GetBool("query-etag") && viper.GetString("issuer-etag") == "" {
 		questions = append(questions, &survey.Question{
 			Name:     "issuerEtag",
 			Prompt:   &survey.Input{Message: "enter your etag"},
 			Validate: survey.Required,
 		})
 	}
-	if !isGenesis && viper.GetString("validator-etag") == "" {
+	if !isGenesis && !viper.GetBool("query-etag") && viper.GetString("validator-etag") == "" {
 		questions = append(questions, &survey.Question{
 			Name:   "validatorEtag",
 			Prompt: &survey.Input{Message: "enter peer etag"},
@@ -114,9 +112,6 @@ func askCreateTxQuestions(isGenesis bool) *chug.Transaction {
 		tx.Data = utils.NewBase58JsonValFromData([]byte(answers.Data))
 	}
 
-	tx.HashTx()
-	fmt.Printf(rndr.MustRenderf("✅ {-+light+cyan}tx hash generated: {-+white}%s{-}\n", tx.Hash.String()))
-
 	questions = []*survey.Question{}
 	if viper.GetString("issuer-pub") == "" {
 		questions = append(questions, &survey.Question{
@@ -131,9 +126,6 @@ func askCreateTxQuestions(isGenesis bool) *chug.Transaction {
 		})
 	}
 	survey.Ask(questions, &answers)
-
-	fmt.Printf(rndr.MustRenderf("✅ {-+light+cyan}lock tx with issuer keys {-+white}{-}\n"))
-	tx.LockIssuer(utils.Base58FromStringMust(answers.IssuerPriv), utils.Base58FromStringMust(answers.IssuerPub))
 
 	questions = []*survey.Question{}
 	if isGenesis {
@@ -156,13 +148,39 @@ func askCreateTxQuestions(isGenesis bool) *chug.Transaction {
 		survey.Ask(questions, &answers)
 	}
 
-	fmt.Printf(rndr.MustRenderf("✅ {-+light+cyan}lock tx with validator keys{-}\n"))
-	tx.LockValidator(utils.Base58FromStringMust(answers.ValidatorPriv), utils.Base58FromStringMust(answers.ValidatorPub))
+	validatorPubK := utils.Base58FromStringMust(answers.ValidatorPub)
+	issuerPubK := utils.Base58FromStringMust(answers.IssuerPub)
+
+	if viper.GetBool("query-etag") && !viper.GetBool("genesis") {
+		issuerAddr, err := chug.NewAddress(issuerPubK)
+		must.NoError(err, "invalid issuer address")
+		issuerEtag, err := cli.GetHugEtag(issuerAddr)
+		must.NoError(err, "%s", err)
+		fmt.Printf(rndr.MustRenderf("✅ {-+light+cyan}issuer {-+white}[%s]{-+light+cyan} etag queried: {-+white}%s{-}\n", issuerAddr, issuerEtag))
+
+		validatorAddr, err := chug.NewAddress(validatorPubK)
+		must.NoError(err, "invalid validator address")
+		validatorEtag, err := cli.GetHugEtag(validatorAddr)
+		must.NoError(err, "%s", err)
+		fmt.Printf(rndr.MustRenderf("✅ {-+light+cyan}validator {-+white}[%s]{-+light+cyan} etag queried: {-+white}%s{-}\n", validatorAddr, validatorEtag))
+
+		tx.IssuerEtag = issuerEtag
+		tx.ValidatorEtag = validatorEtag
+	}
+
+	tx.HashTx()
+	print.LineTpl("✅ tx hash {{.hash}} generated", print.Fields{"hash": tx.Hash.String()})
+
+	print.LineTpl("✅ lock tx with issuer keys", nil)
+	tx.LockIssuer(utils.Base58FromStringMust(answers.IssuerPriv), issuerPubK)
+
+	print.LineTpl("✅ lock tx with validator keys", nil)
+	tx.LockValidator(utils.Base58FromStringMust(answers.ValidatorPriv), validatorPubK)
 
 	if isGenesis {
 		fmt.Printf(rndr.MustRenderf("✅ {-+light+cyan}{reverse}GENESIS{-+light+cyan} tx generated{-}\n"))
 	} else {
-		fmt.Printf(rndr.MustRenderf("✅ {-+light+cyan}tx generated{-}\n"))
+		print.LineTpl("✅ tx generated", print.Fields{})
 	}
 
 	return tx
@@ -176,28 +194,20 @@ var txNewCmd = &cobra.Command{
 		tx := askCreateTxQuestions(viper.GetBool("genesis"))
 
 		if viper.GetBool("print") {
-			tmpl, err := template.New("").Parse(`
-{-+magenta}Version:{-+white}		 {{.Version}}
-{-+magenta}Type:{-+white}			 {{.Type}}
-{-+magenta}Timestamp:{-+white}		 {{.Timestamp}}
-{-+magenta}Hash:{-+white}			 {{.Hash}}
-{-+magenta}IssuerPubKey:{-+white}		 {{.IssuerPubKey}}
-{-+magenta}IssuerLock:{-+white}		 {{.IssuerLock}}
-{-+magenta}IssuerEtag:{-+white}		 {{.IssuerEtag}}
-{-+magenta}ValidatorPubKey:{-+white} 	 {{.ValidatorPubKey}}
-{-+magenta}ValidatorLock:{-+white} 		 {{.ValidatorLock}}
-{-+magenta}ValidatorEtag:{-+white}	 {{.ValidatorEtag}}
-{-+magenta}Data:{-+white}			 {{.Data}}
-`)
-			must.NoError(err, "failed gen template")
+			print.LineTpl(`
+Version:		 {{.Version}}
+Type:			 {{.Type}}
+Timestamp:		 {{.Timestamp}}
+Hash:			 {{.Hash}}
+IssuerPubKey:		 {{.IssuerPubKey}}
+IssuerLock:		 {{.IssuerLock}}
+IssuerEtag:		 {{.IssuerEtag}}
+ValidatorPubKey: 	 {{.ValidatorPubKey}}
+ValidatorLock: 		 {{.ValidatorLock}}
+ValidatorEtag:	 	 {{.ValidatorEtag}}
+Data:			 {{.Data}}			
+`, tx)
 
-			var tpl bytes.Buffer
-			err = tmpl.Execute(&tpl, tx)
-			must.NoError(err, "failed exec template")
-
-			printStr := tpl.String()
-			rndr := ataman.NewRenderer(ataman.CurlyStyle())
-			fmt.Println(rndr.MustRender(printStr))
 		}
 
 		if viper.GetBool("send") {
@@ -206,7 +216,7 @@ var txNewCmd = &cobra.Command{
 				return
 			}
 
-			err := cli.SendTransaction(tx)
+			err := cli.PostTransaction(tx)
 			if err != nil {
 				fmt.Printf("🚨 %s\n", err.Error())
 			}
@@ -226,6 +236,7 @@ func init() {
 
 	txNewCmd.Flags().StringP("data", "", "", "data to store in the tx")
 
+	txNewCmd.Flags().BoolP("query-etag", "", true, "if true etags will be queried from the blockchain")
 	txNewCmd.Flags().BoolP("genesis", "", false, "true if genesis tx else false")
 	txNewCmd.Flags().BoolP("print", "", true, "true if the transaction should be printed")
 	txNewCmd.Flags().BoolP("send", "", false, "true if the transaction should be sended")
