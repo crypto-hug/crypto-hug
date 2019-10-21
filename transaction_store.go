@@ -40,7 +40,7 @@ func (s *TxStore) commitBlock(block *Block) error {
 
 	path := s.conf.Paths.BlockDir + addr + ".json"
 	if s.fs.FileExists(path) {
-		return errors.Errorf("invalid block commit [%s]. Block already exists")
+		return errors.Errorf("invalid block commit [%s]. Block already exists", addr)
 	}
 
 	blockData, err := utils.JsonSerializeRaw(block)

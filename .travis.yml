@@ -10,19 +10,24 @@ env:
 # You don't need to test on very old version of the Go compiler. It's the user's
 # responsibility to keep their compilers up to date.
 go:
-  - 1.11.x
+  - 1.12.x
 
 # Only clone the most recent commit.
 git:
   depth: 1
 
+# caching for gopath and pkg
+cache:
+  directories:
+    - $HOME/.cache/go-build
+    - $HOME/gopath/pkg/mod  
 
 # Don't email me the results of the test runs.
 notifications:
   email: false
 
 script:
-  - go test ./... -v -coverprofile=coverage.txt -covermode=atomic 
+  - make ci
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)
