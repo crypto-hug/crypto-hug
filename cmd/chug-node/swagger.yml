@@ -1,0 +1,70 @@
+swagger: "2.0"
+info:
+  version: "1.0.0"
+  title: "CHUG Node API"
+host: "chug.sock"
+basePath: "/v2"
+schemes:
+- "unix"
+- "http"
+paths:
+  /tx:
+    post:
+      summary: "process a new tx"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "body"
+        description: "Tx Object"
+        required: true
+        schema:
+          $ref: "#/definitions/Tx"
+      responses:
+        405:
+          description: "Invalid input"
+definitions:
+  Tx:
+    type: "object"
+    properties:
+      version:
+        type: "string"
+        enum:
+        - "1.0.0"
+      type:
+        type: "string"
+        enum:
+        - "HUG"
+      timestamp:
+        type: "integer"
+        format: "int64"
+      hash:
+        type: "string"
+        format: "base58"
+      issuerPubKey:
+        type: "string"
+        format: "base58"
+      issuerLock:
+        type: "string"
+        format: "base58"
+      issuerEtag:
+        type: "string"
+      validatorPubKey:
+        type: "string"
+        format: "base58"
+      validatorLock:
+        type: "string"
+        format: "base58"
+      validatorEtag:
+        type: "string"
+        format: "string"
+      data:
+        type: "string"
+        format: "base58"
+  ProcessTxResponse:
+    type: "object"
+    properties:
+      message:
+        type: "string"
