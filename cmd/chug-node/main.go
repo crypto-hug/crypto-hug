@@ -14,6 +14,6 @@ func main() {
 	must.NoError(err, "could not get config")
 	host := chug.NewNodeHost(fs, cfg)
 
-	api := newApi(host)
+	api := newNodeHost(host)
 	log.Fatal(api.Run())
 }

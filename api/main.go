@@ -1,4 +1,4 @@
-package main
+package api
 
 import (
 	"encoding/json"
@@ -17,7 +17,7 @@ type ApiError struct {
 
 func (err *ApiError) Error() string { return err.Message }
 
-type ApiBase struct {
+type Api struct {
 	*mux.Router
 	Listener net.Listener
 }
@@ -28,24 +28,32 @@ type Request struct {
 	*http.Request
 }
 
-func (a *ApiBase) Post(path string, f func(w *Response, r *Request)) {
+func New() *Api {
+	result := new(Api)
+	result.Router = mux.NewRouter()
+	return result
+}
+
+func (a *Api) Post(path string, f func(w *Response, r *Request)) {
 	handler := a.wrapHandleFunc(f)
 	a.Router.HandleFunc(path, handler).Methods("POST")
 }
 
-func (a *ApiBase) Put(path string, f func(w *Response, r *Request)) {
+func (a *Api) Put(path string, f func(w *Response, r *Request)) {
 	handler := a.wrapHandleFunc(f)
 	a.Router.HandleFunc(path, handler).Methods("PUT")
 }
-func (a *ApiBase) Get(path string, f func(w *Response, r *Request)) {
+
+func (a *Api) Get(path string, f func(w *Response, r *Request)) {
 	handler := a.wrapHandleFunc(f)
 	a.Router.HandleFunc(path, handler).Methods("GET")
 }
 
-func (a *ApiBase) PanicWhenError(err error, code int, msg interface{}) {
+func (a *Api) MustNoError(err error, code int, msg interface{}) {
 	if err == nil {
 		return
 	}
+
 	if msg == nil {
 		msg = err.Error()
 	}
@@ -56,7 +64,7 @@ func (a *ApiBase) PanicWhenError(err error, code int, msg interface{}) {
 	})
 }
 
-func (a *ApiBase) wrapHandleFunc(handler func(w *Response, r *Request)) func(http.ResponseWriter, *http.Request) {
+func (a *Api) wrapHandleFunc(handler func(w *Response, r *Request)) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		res := &Response{
 			ResponseWriter: w,
@@ -84,7 +92,7 @@ func (a *ApiBase) wrapHandleFunc(handler func(w *Response, r *Request)) func(htt
 	}
 }
 
-func (r *Request) JsonBody(out interface{}) error {
+func (r *Request) JSONRequest(out interface{}) error {
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		return err
@@ -104,6 +112,7 @@ func (w *Response) JSONRespnse(status int, payload interface{}) {
 		w.Write([]byte(err.Error()))
 		return
 	}
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	w.Write([]byte(response))
@@ -114,7 +123,7 @@ func (w *Response) EmptyResponse(status int) {
 }
 
 func (w *Response) ErrorResponse(code int, message string) {
-	w.WriteHeader(code)
-	w.Write([]byte(message))
-	// w.JSONRespnse(code, map[string]string{"error": message})
+	w.JSONRespnse(code, &map[string]string{
+		"message": message,
+	})
 }

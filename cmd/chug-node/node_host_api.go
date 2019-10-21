@@ -6,14 +6,14 @@ import (
 	"os"
 
 	chug "github.com/crypto-hug/crypto-hug"
+	"github.com/crypto-hug/crypto-hug/api"
 	"github.com/crypto-hug/crypto-hug/cmd/chug-node/client"
 	"github.com/crypto-hug/crypto-hug/utils"
-	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 )
 
-type api struct {
-	*ApiBase
+type nodeHost struct {
+	*api.Api
 	host *chug.NodeHost
 }
 
@@ -52,10 +52,9 @@ func mapTx(apiModel *client.Tx) (*chug.Transaction, error) {
 	return tx, nil
 }
 
-func newApi(host *chug.NodeHost) *api {
-	result := new(api)
-	result.ApiBase = new(ApiBase)
-	result.Router = mux.NewRouter()
+func newNodeHost(host *chug.NodeHost) *nodeHost {
+	result := new(nodeHost)
+	result.Api = api.New()
 	result.host = host
 
 	result.Post("/tx", result.postTx)
@@ -65,8 +64,8 @@ func newApi(host *chug.NodeHost) *api {
 	return result
 }
 
-func (api *api) Run() error {
-	api.host.Start()
+func (nh *nodeHost) Run() error {
+	nh.host.Start()
 	if err := os.RemoveAll(sockAddr); err != nil {
 		panic(errors.Wrapf(err, "failed remove socket %s", sockAddr))
 	}
@@ -76,5 +75,5 @@ func (api *api) Run() error {
 		panic(errors.Wrapf(err, "failed listen to socket %s", sockAddr))
 	}
 
-	return http.Serve(l, api)
+	return http.Serve(l, nh)
 }
