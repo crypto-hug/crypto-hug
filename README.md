@@ -3,11 +3,11 @@
 
 By [v-braun - viktor-braun.de](https://viktor-braun.de).
 
-[![](https://img.shields.io/github/license/v-braun/crypto-hug.svg?style=flat-square)](https://github.com/v-braun/crypto-hug/blob/master/LICENSE)
-[![Build Status](https://img.shields.io/travis/v-braun/crypto-hug.svg?style=flat-square)](https://travis-ci.org/v-braun/crypto-hug)
-[![codecov](https://codecov.io/gh/v-braun/crypto-hug/branch/master/graph/badge.svg)](https://codecov.io/gh/v-braun/crypto-hug)
-[![Go Report Card](https://goreportcard.com/badge/github.com/v-braun/crypto-hug)](https://goreportcard.com/report/github.com/v-braun/crypto-hug)
-[![Documentation](https://godoc.org/github.com/v-braun/crypto-hug?status.svg)](http://godoc.org/github.com/v-braun/crypto-hug)
+[![](https://img.shields.io/github/license/crypto-hug/crypto-hug.svg?style=flat-square)](https://github.com/crypto-hug/crypto-hug/blob/master/LICENSE)
+[![Build Status](https://img.shields.io/travis/crypto-hug/crypto-hug.svg?style=flat-square)](https://travis-ci.org/crypto-hug/crypto-hug)
+[![codecov](https://codecov.io/gh/crypto-hug/crypto-hug/branch/master/graph/badge.svg)](https://codecov.io/gh/crypto-hug/crypto-hug)
+[![Go Report Card](https://goreportcard.com/badge/github.com/crypto-hug/crypto-hug)](https://goreportcard.com/report/github.com/crypto-hug/crypto-hug)
+[![Documentation](https://godoc.org/github.com/crypto-hug/crypto-hug?status.svg)](http://godoc.org/github.com/crypto-hug/crypto-hug)
 ![PR welcome](https://img.shields.io/badge/PR-welcome-green.svg?style=flat-square)
 
 <p align="center">
@@ -20,7 +20,7 @@ By [v-braun - viktor-braun.de](https://viktor-braun.de).
 
 ## Installation
 ```sh
-go get github.com/v-braun/crypto-hug
+go get github.com/crypto-hug/crypto-hug
 ```
 
 
@@ -49,8 +49,8 @@ configure crypto-hug
 ## Contributing
 
 Make sure to read these guides before getting started:
-- [Contribution Guidelines](https://github.com/v-braun/crypto-hug/blob/master/CONTRIBUTING.md)
-- [Code of Conduct](https://github.com/v-braun/crypto-hug/blob/master/CODE_OF_CONDUCT.md)
+- [Contribution Guidelines](https://github.com/crypto-hug/crypto-hug/blob/master/CONTRIBUTING.md)
+- [Code of Conduct](https://github.com/crypto-hug/crypto-hug/blob/master/CODE_OF_CONDUCT.md)
 
 ## License
-**crypto-hug** is available under the MIT License. See [LICENSE](https://github.com/v-braun/crypto-hug/blob/master/LICENSE) for details.
+**crypto-hug** is available under the MIT License. See [LICENSE](https://github.com/crypto-hug/crypto-hug/blob/master/LICENSE) for details.
