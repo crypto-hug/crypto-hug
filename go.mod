@@ -5,12 +5,11 @@ go 1.12
 require (
 	github.com/AlecAivazis/survey/v2 v2.0.4
 	github.com/bitly/go-simplejson v0.5.0
-	github.com/buger/jsonparser v0.0.0-20191004114745-ee4c978eae7e
+	github.com/bmizerany/assert v0.0.0-20160611221934-b7ed37b82869 // indirect
+	github.com/buger/jsonparser v1.1.1
 	github.com/gorilla/mux v1.7.3
-	github.com/mitchellh/go-homedir v1.1.0
 	github.com/mr-tron/base58 v1.1.2
 	github.com/pkg/errors v0.8.1
-	github.com/sirupsen/logrus v1.4.2 // indirect
 	github.com/spf13/afero v1.2.2
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/pflag v1.0.3
